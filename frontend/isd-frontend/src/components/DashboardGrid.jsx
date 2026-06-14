@@ -1,6 +1,9 @@
 import { AlertCircle, Plus } from 'lucide-react';
+import { useModalStore } from '../store/useModalStore';
 
 export function DashboardGrid() {
+  const { openAgendamento } = useModalStore();
+
   return (
     <div className="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col mt-6">
       <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-slate-50/50">
@@ -25,7 +28,7 @@ export function DashboardGrid() {
               <span className="text-sm font-medium text-on-surface">Consultório 102</span>
             </div>
             
-            {/* Ocupado com Exceção (Falta) */}
+            {/* 08:00 - Ocupado com Exceção (Falta) */}
             <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors">
               <span className="text-sm text-on-surface">Dr. Silva</span>
               <button className="absolute -top-1 -right-1 w-6 h-6 bg-isd-orange text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" title="Registrar Falta">
@@ -33,35 +36,50 @@ export function DashboardGrid() {
               </button>
             </div>
             
-            {/* Ocupado Padrão */}
+            {/* 09:00 - Ocupado Padrão */}
             <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors">
               <span className="text-sm text-on-surface">Dr. Silva</span>
             </div>
 
-            {/* Livre / Alocar Avulso */}
-            <div className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors">
+            {/* 10:00 - LIVRE (GATILHO AQUI) */}
+            <div 
+              onClick={() => openAgendamento({ salaId: '102', hora: 10 })}
+              className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
+            >
               <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
                 <Plus size={16} /> Alocar
               </button>
             </div>
-            <div className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors">
+
+            {/* 11:00 - LIVRE (GATILHO AQUI) */}
+            <div 
+              onClick={() => openAgendamento({ salaId: '102', hora: 11 })}
+              className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
+            >
               <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
                 <Plus size={16} /> Alocar
               </button>
             </div>
             
-            {/* Bloco contínuo */}
+            {/* 13:00 às 15:00 - Bloco contínuo ocupado */}
             <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors col-span-2">
               <span className="text-sm text-on-surface">Dra. Ana</span>
               <button className="absolute -top-1 -right-1 w-6 h-6 bg-isd-orange text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" title="Registrar Falta">
                 <AlertCircle size={14} />
               </button>
             </div>
-             <div className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors">
+
+            {/* 15:00 - LIVRE (GATILHO AQUI) */}
+            <div 
+              onClick={() => openAgendamento({ salaId: '102', hora: 15 })}
+              className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
+            >
               <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
                 <Plus size={16} /> Alocar
               </button>
             </div>
+
+            {/* 16:00 - Ocupado */}
             <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors">
               <span className="text-sm text-on-surface">Dr. Silva</span>
             </div>
