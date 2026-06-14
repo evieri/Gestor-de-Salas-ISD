@@ -1,5 +1,6 @@
+from backend.routers import salas
 from fastapi import FastAPI
-from routers import salas, grade
+from backend.routers import grade
 
 app = FastAPI(
     title="API de Alocação de Espaços",

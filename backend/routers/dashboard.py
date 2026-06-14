@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from datetime import date
 from typing import Dict, Any
 
-from dependencies import get_db
-import models
+from backend.dependencies import get_db
+import backend.models as models
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 

@@ -7,7 +7,7 @@ from alembic import context
 
 # 1. Configuração de Path (Garante que o Alembic encontre o arquivo models.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from models import Base
+from backend.models import Base
 
 # 2. Carregamento manual do arquivo .env (Evita expor credenciais no GitHub)
 if os.path.exists(".env"):

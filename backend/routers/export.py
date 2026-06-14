@@ -5,7 +5,7 @@ from datetime import date, timedelta
 import pandas as pd
 import io
 
-from dependencies import get_db
+from backend.dependencies import get_db
 # (Importe seus models e a mesma lógica de matriz do dashboard_diario aqui)
 
 router = APIRouter(prefix="/exportar", tags=["Exportação"])
