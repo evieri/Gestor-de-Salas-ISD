@@ -1,122 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BaseLayout } from './layouts/BaseLayout';
+import Dashboard from './pages/Dashboard';
+import Salas from './pages/Salas';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <Routes>
+        {/* Rota Pública Temporária: Redireciona direto pro App enquanto não temos tela de Login */}
+        <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
 
-      <div className="ticks"></div>
+        {/* Árvore de Rotas Privadas (Protegidas) */}
+        <Route path="/app" element={<BaseLayout />}>
+          {/* O index garante que /app caia no dashboard por padrão */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+          
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="salas" element={<Salas />} />
+          
+          {/* Placeholder para futuras telas do sitemap */}
+          <Route path="agendamentos" element={<div className="p-8">Tela de Agendamentos em construção...</div>} />
+          <Route path="profissionais" element={<div className="p-8">Tela de Profissionais em construção...</div>} />
+          <Route path="configuracoes" element={<div className="p-8">Configurações...</div>} />
+        </Route>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Fallback (404 Not Found) */}
+        <Route path="*" element={
+          <div className="flex h-screen flex-col items-center justify-center bg-slate-50 text-slate-600">
+            <h1 className="text-4xl font-bold mb-2">404</h1>
+            <p className="text-lg">A página que você procura não existe.</p>
+          </div>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
 }
-
-export default App

@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  /* Cores de Superfície e Textos (Herança do SaaS) */
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #414847;
+  --color-outline-variant: #e2e8f0;
+  
+  /* Paleta Base Gerada pela IA */
+  --color-primary: #1c423f;
+  --color-primary-container: #345956;
+  --color-on-primary: #ffffff;
+  
+  /* A Sua Paleta Estrita do Documento (ISD) */
+  --color-isd-teal: #345956;
+  --color-isd-gold: #F2BE5C;
+  --color-isd-orange: #D97A43;
+
+  /* Medidas Customizadas */
+  --spacing-sidebar_width: 260px;
+}
+
+/* Opcional: Um reset sutil pra garantir o fundo off-white geral */
+body {
+  @apply bg-slate-50 text-slate-800;
+}
