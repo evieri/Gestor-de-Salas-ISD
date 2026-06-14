@@ -1,6 +1,9 @@
 import { Download, UserCircle, Plus } from 'lucide-react';
+import { useModalStore } from '../store/useModalStore';
 
 export function Header() {
+  const { openAgendamento } = useModalStore();
+
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-outline-variant flex justify-between items-center w-full px-8 py-4">
       <div>
@@ -18,8 +21,11 @@ export function Header() {
         
         <div className="h-8 w-px bg-outline-variant mx-2"></div>
         
-        {/* A CTA Primária Restaurada */}
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-isd-teal text-white rounded-md font-semibold text-sm hover:bg-opacity-90 transition-all shadow-sm">
+        {/* A CTA Primária */}
+        <button 
+          onClick={openAgendamento} // GATILHO ADICIONADO AQUI
+          className="flex items-center gap-2 px-6 py-2.5 bg-isd-teal text-white rounded-md font-semibold text-sm hover:bg-opacity-90 transition-all shadow-sm cursor-pointer"
+        >
           <Plus size={18} />
           NOVO AGENDAMENTO
         </button>
