@@ -1,4 +1,4 @@
-from database import SessionLocal # Importe sua fábrica de sessões do SQLAlchemy
+from backend.database import SessionLocal
 
 def get_db():
     db = SessionLocal()

@@ -9,7 +9,7 @@ from uuid import UUID
 class SalaBase(BaseModel):
     nome: str = Field(..., min_length=3, description="Ex: Consultório 102")
     capacidade_profissionais: int = Field(..., gt=0, description="1 para individual, >1 para ginásio")
-    setor_id: UUID
+    setor_id: Optional[UUID] = None
     especialidade_exclusiva_id: Optional[UUID] = None
 
 class SalaCreate(SalaBase):
@@ -39,7 +39,6 @@ class GradeFixaBase(BaseModel):
             raise ValueError('A hora de início deve ser estritamente menor que a hora de fim.')
         
         # 2. Bloqueio matemático do horário de almoço (12h às 13h)
-        # Nenhuma reserva pode começar às 12h, e nenhuma pode cruzar esse bloco.
         if self.hora_inicio == 12 or (self.hora_inicio < 12 and self.hora_fim > 12):
             raise ValueError('Não é permitido alocar profissionais no horário de almoço (12h-13h).')
         
@@ -47,6 +46,12 @@ class GradeFixaBase(BaseModel):
 
 class GradeFixaCreate(GradeFixaBase):
     pass
+
+class GradeFixaResponse(GradeFixaBase):
+    id: UUID
+
+    class Config:
+        from_attributes = True
 
 # ==========================================
 # 3. SCHEMAS DE EXCEÇÕES DIÁRIAS (Faltas)
@@ -65,3 +70,26 @@ class ExcecaoDiariaBase(BaseModel):
 
 class ExcecaoDiariaCreate(ExcecaoDiariaBase):
     pass
+
+class ExcecaoDiariaResponse(ExcecaoDiariaBase):
+    id: UUID
+
+    class Config:
+        from_attributes = True
+
+# ==========================================
+# 4. SCHEMAS DE PROFISSIONAL
+# ==========================================
+class ProfissionalBase(BaseModel):
+    nome_completo: str = Field(..., min_length=3)
+    especialidade_id: Optional[UUID] = None
+
+class ProfissionalCreate(ProfissionalBase):
+    pass
+
+class ProfissionalResponse(ProfissionalBase):
+    id: UUID
+    ativo: bool
+
+    class Config:
+        from_attributes = True

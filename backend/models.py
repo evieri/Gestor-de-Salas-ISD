@@ -1,9 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey, Date
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base, relationship
-
-Base = declarative_base()
+from backend.database import Base
 
 class Unidade(Base):
     __tablename__ = 'unidades'
