@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import date
 from typing import Dict, Any
+from datetime import datetime
 
 from backend.dependencies import get_db
 import backend.models as models
@@ -22,6 +23,7 @@ def obter_dashboard_diario(data_alvo: date, db: Session = Depends(get_db)) -> Di
     grade_do_dia = db.query(models.GradeFixa).filter(models.GradeFixa.dia_semana == dia_semana_bd).all()
     excecoes_hoje = db.query(models.ExcecaoDiaria).filter(models.ExcecaoDiaria.data_excecao == data_alvo).all()
     reservas_hoje = db.query(models.ReservaAvulsa).filter(models.ReservaAvulsa.data_reserva == data_alvo).all()
+    agendamentos_hoje = db.query(models.Agendamento).filter(models.Agendamento.data == data_alvo).all()
 
     # 3. Estruturar a Matriz de Horários (8h às 16h, pulando 12h)
     horarios_operacionais = [8, 9, 10, 11, 13, 14, 15, 16]
@@ -58,10 +60,51 @@ def obter_dashboard_diario(data_alvo: date, db: Session = Depends(get_db)) -> Di
                     status_sala["status"] = "OCUPADO_AVULSO"
                     status_sala["profissional"] = reserva_avulsa.profissional.nome_completo
             
+            # Se ainda estiver livre, checa o novo Motor de Reservas (Agendamento)
+            if status_sala["status"] == "LIVRE":
+                agendamento = next((a for a in agendamentos_hoje if a.sala_id == sala.id and a.hora_inicio <= hora < a.hora_fim), None)
+                if agendamento:
+                    status_sala["status"] = "OCUPADO"
+                    status_sala["profissional"] = agendamento.profissional.nome_completo
+            
             matriz_dashboard[hora].append(status_sala)
 
     return {
         "data": data_alvo,
         "dia_semana": dia_semana_bd,
         "grade": matriz_dashboard
+    }
+
+@router.get("/metricas")
+def obter_metricas(data_alvo: date, db: Session = Depends(get_db)):
+    total_salas = db.query(models.Sala).filter(models.Sala.ativo == True).count()
+    
+    # salas livres agora
+    hora_atual = datetime.now().hour
+    # Conta salas que TÊM agendamento rodando na hora exata
+    salas_ocupadas_agora = db.query(models.Agendamento).filter(
+        models.Agendamento.data == data_alvo,
+        models.Agendamento.hora_inicio <= hora_atual,
+        models.Agendamento.hora_fim > hora_atual
+    ).count()
+    
+    salas_livres_agora = total_salas - salas_ocupadas_agora
+    if salas_livres_agora < 0:
+        salas_livres_agora = 0
+        
+    # ocupacao percentual do dia
+    agendamentos = db.query(models.Agendamento).filter(models.Agendamento.data == data_alvo).all()
+    slots_ocupados = sum(a.hora_fim - a.hora_inicio for a in agendamentos)
+    
+    total_slots_possiveis = total_salas * 8
+    if total_slots_possiveis > 0:
+        ocupacao = round((slots_ocupados / total_slots_possiveis) * 100, 1)
+    else:
+        ocupacao = 0.0
+        
+    return {
+        "total_salas": total_salas,
+        "salas_livres_agora": salas_livres_agora,
+        "ocupacao_percentual": ocupacao,
+        "agendamentos_hoje": len(agendamentos)
     }

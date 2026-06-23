@@ -10,10 +10,11 @@ router = APIRouter(prefix="/agendamentos", tags=["Agendamentos"])
 
 @router.post("/", response_model=schemas.AgendamentoResponse)
 def criar_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depends(get_db)):
-    # Verificação de Double-booking (Motor de Reservas)
+    # 1. Verificação de Double-booking com OUTROS profissionais
     conflito = db.query(models.Agendamento).filter(
         models.Agendamento.sala_id == agendamento.sala_id,
         models.Agendamento.data == agendamento.data,
+        models.Agendamento.profissional_id != agendamento.profissional_id,
         models.Agendamento.hora_inicio < agendamento.hora_fim,
         models.Agendamento.hora_fim > agendamento.hora_inicio
     ).first()
@@ -21,9 +22,26 @@ def criar_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depe
     if conflito:
         raise HTTPException(
             status_code=400, 
-            detail="Conflito de agenda: Sala já ocupada neste horário."
+            detail="Conflito de agenda: Sala já ocupada por outro profissional neste horário."
         )
+
+    # 2. Merge de Agendamentos do MESMO profissional (adjacentes ou sobrepostos)
+    existente = db.query(models.Agendamento).filter(
+        models.Agendamento.sala_id == agendamento.sala_id,
+        models.Agendamento.data == agendamento.data,
+        models.Agendamento.profissional_id == agendamento.profissional_id,
+        models.Agendamento.hora_inicio <= agendamento.hora_fim,
+        models.Agendamento.hora_fim >= agendamento.hora_inicio
+    ).first()
+    
+    if existente:
+        existente.hora_inicio = min(existente.hora_inicio, agendamento.hora_inicio)
+        existente.hora_fim = max(existente.hora_fim, agendamento.hora_fim)
+        db.commit()
+        db.refresh(existente)
+        return existente
         
+    # 3. Se não houver nada para mesclar, cria um novo bloco
     db_agendamento = models.Agendamento(**agendamento.model_dump())
     db.add(db_agendamento)
     db.commit()

@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey, Date
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from backend.database import Base
 
@@ -72,3 +73,6 @@ class Agendamento(Base):
     data = Column(Date, nullable=False)
     hora_inicio = Column(Integer, nullable=False)
     hora_fim = Column(Integer, nullable=False)
+
+    profissional = relationship("Profissional")
+    sala = relationship("Sala")

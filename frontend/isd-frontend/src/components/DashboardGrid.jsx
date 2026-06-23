@@ -4,7 +4,7 @@ import { useModalStore } from '../store/useModalStore';
 import { api } from '../services/api';
 
 export function DashboardGrid() {
-  const { openAgendamento } = useModalStore();
+  const { openAgendamento, refreshTrigger } = useModalStore();
   const [matriz, setMatriz] = useState({});
   const [salas, setSalas] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -43,7 +43,7 @@ export function DashboardGrid() {
 
   useEffect(() => {
     buscarGradeReal();
-  }, []);
+  }, [refreshTrigger]);
 
   return (
     <div className="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col mt-6">

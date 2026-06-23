@@ -1,7 +1,27 @@
+import { useState, useEffect } from 'react';
 import { DashboardGrid } from '../components/DashboardGrid';
-import { PieChart, DoorOpen, Calendar, ArrowUp } from 'lucide-react';
+import { PieChart, DoorOpen, Calendar } from 'lucide-react';
+import { api } from '../services/api';
+import { useModalStore } from '../store/useModalStore';
 
 export default function Dashboard() {
+  const { refreshTrigger } = useModalStore();
+  const [metricas, setMetricas] = useState({
+    ocupacao_percentual: 0,
+    salas_livres_agora: 0,
+    total_salas: 0,
+    agendamentos_hoje: 0
+  });
+
+  useEffect(() => {
+    const hoje = new Date().toISOString().split('T')[0];
+    api.get(`/dashboard/metricas?data_alvo=${hoje}`)
+      .then(res => {
+        if (res.data) setMetricas(res.data);
+      })
+      .catch(console.error);
+  }, [refreshTrigger]);
+
   return (
     <div className="flex flex-col flex-1 w-full">
       {/* Metric Cards */}
@@ -14,11 +34,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-isd-teal flex items-baseline gap-2">
-              85% <span className="text-sm text-green-600 flex items-center"><ArrowUp size={14} /> 5%</span>
+            <div className={`text-3xl font-bold flex items-baseline gap-2 ${metricas.ocupacao_percentual > 80 ? 'text-orange-500' : 'text-isd-teal'}`}>
+              {metricas.ocupacao_percentual}%
             </div>
-            <div className="w-full bg-slate-100 mt-3 rounded-full h-1.5">
-              <div className="bg-isd-teal h-1.5 rounded-full w-[85%]"></div>
+            <div className="w-full bg-slate-100 mt-3 rounded-full h-1.5 overflow-hidden">
+              <div 
+                className={`h-1.5 rounded-full transition-all duration-500 ${metricas.ocupacao_percentual > 80 ? 'bg-orange-500' : 'bg-isd-teal'}`} 
+                style={{ width: `${Math.min(metricas.ocupacao_percentual, 100)}%` }}
+              ></div>
             </div>
           </div>
         </div>
@@ -32,9 +55,8 @@ export default function Dashboard() {
           </div>
           <div>
             <div className="text-3xl font-bold text-slate-800 flex items-baseline gap-2">
-              4 <span className="text-sm font-normal text-slate-500">/ 24 total</span>
+              {metricas.salas_livres_agora} <span className="text-sm font-normal text-slate-500">/ {metricas.total_salas} total</span>
             </div>
-            <p className="text-sm text-slate-500 mt-2">Disponibilidade atual crítica</p>
           </div>
         </div>
 
@@ -46,7 +68,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="text-3xl font-bold text-slate-800 flex items-baseline gap-2">
-            18
+            {metricas.agendamentos_hoje}
           </div>
         </div>
       </div>

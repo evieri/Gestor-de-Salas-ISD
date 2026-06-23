@@ -4,7 +4,7 @@ import { useModalStore } from '../store/useModalStore';
 import { api } from '../services/api';
 
 export function AgendamentoModal() {
-  const { isAgendamentoOpen, closeAgendamento, preFillData } = useModalStore();
+  const { isAgendamentoOpen, closeAgendamento, preFillData, triggerRefresh } = useModalStore();
   
   const [salaSelecionada, setSalaSelecionada] = useState("");
   const [profissionalSelecionado, setProfissionalSelecionado] = useState("");
@@ -84,6 +84,7 @@ export function AgendamentoModal() {
         hora_inicio: horaInicio,
         hora_fim: horaFim
       });
+      triggerRefresh();
       closeAgendamento();
       // Idealmente, aqui disparamos um refresh na Grade
     } catch (error) {
