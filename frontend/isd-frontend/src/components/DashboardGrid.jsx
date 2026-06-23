@@ -1,89 +1,132 @@
-import { AlertCircle, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Loader2 } from 'lucide-react';
 import { useModalStore } from '../store/useModalStore';
+import { api } from '../services/api';
 
 export function DashboardGrid() {
   const { openAgendamento } = useModalStore();
+  const [matriz, setMatriz] = useState({});
+  const [salas, setSalas] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  // A régua de horários exata do seu backend
+  const horariosOperacionais = [8, 9, 10, 11, 13, 14, 15, 16];
+
+  const buscarGradeReal = async () => {
+    try {
+      setCarregando(true);
+      const hoje = new Date().toISOString().split('T')[0];
+
+      const response = await api.get(`/dashboard/diario?data_alvo=${hoje}`);
+
+      // O seu backend retorna: { data, dia_semana, grade: { "8": [...], "9": [...] } }
+      if (response.data && response.data.grade) {
+        setMatriz(response.data.grade);
+
+        // Pega a lista de salas do primeiro horário (8h) para montar o eixo Y vertical
+        const primeiroHorario = horariosOperacionais[0];
+        const salasDoPrimeiroHorario = response.data.grade[primeiroHorario] || [];
+
+        const listaSalas = salasDoPrimeiroHorario.map(s => ({
+          id: s.sala_id,
+          nome: s.sala_nome
+        }));
+
+        setSalas(listaSalas);
+      }
+    } catch (error) {
+      console.error("Erro ao ler matriz do dashboard:", error);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarGradeReal();
+  }, []);
 
   return (
     <div className="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col mt-6">
       <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-slate-50/50">
-        <h3 className="text-lg font-semibold text-on-surface">Grade de Ocupação - Hoje</h3>
+        <div className="flex items-center gap-4">
+          <h3 className="text-lg font-semibold text-on-surface">Grade de Ocupação - Hoje</h3>
+          {carregando && <Loader2 size={16} className="animate-spin text-isd-teal" />}
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-slate-200"></div><span className="text-sm text-on-surface-variant">Ocupado</span></div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm border border-dashed border-outline-variant"></div><span className="text-sm text-on-surface-variant">Livre</span></div>
         </div>
       </div>
-      
+
       <div className="overflow-x-auto flex-1">
         <div className="min-w-[1000px] h-full p-4">
-          <div className="grid grid-cols-[200px_repeat(8,_1fr)] gap-2 h-full">
-            {/* Cabeçalho */}
-            <div className="sticky left-0 bg-white z-10 border-b border-outline-variant/50 pb-2"></div>
-            {['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'].map(hora => (
-              <div key={hora} className="text-center text-sm font-semibold text-on-surface-variant border-b border-outline-variant/50 pb-2">{hora}</div>
-            ))}
 
-            {/* Linha: Consultório 102 */}
-            <div className="sticky left-0 bg-white z-10 flex items-center pr-4 border-r border-outline-variant/30">
-              <span className="text-sm font-medium text-on-surface">Consultório 102</span>
+          {salas.length === 0 && !carregando ? (
+            <div className="flex items-center justify-center h-32 text-slate-500 font-medium">
+              Nenhuma sala ativa encontrada no banco para montar o painel.
             </div>
-            
-            {/* 08:00 - Ocupado com Exceção (Falta) */}
-            <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors">
-              <span className="text-sm text-on-surface">Dr. Silva</span>
-              <button className="absolute -top-1 -right-1 w-6 h-6 bg-isd-orange text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" title="Registrar Falta">
-                <AlertCircle size={14} />
-              </button>
-            </div>
-            
-            {/* 09:00 - Ocupado Padrão */}
-            <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors">
-              <span className="text-sm text-on-surface">Dr. Silva</span>
-            </div>
+          ) : (
+            <div className="grid grid-cols-[200px_repeat(8,_1fr)] gap-2 h-full">
+              {/* Linha do Cabeçalho de Horários */}
+              <div className="sticky left-0 bg-white z-10 border-b border-outline-variant/50 pb-2"></div>
+              {horariosOperacionais.map(hora => (
+                <div key={hora} className="text-center text-sm font-semibold text-on-surface-variant border-b border-outline-variant/50 pb-2">
+                  {hora < 10 ? `0${hora}:00` : `${hora}:00`}
+                </div>
+              ))}
 
-            {/* 10:00 - LIVRE (GATILHO AQUI) */}
-            <div 
-              onClick={() => openAgendamento({ salaId: '102', hora: 10 })}
-              className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
-            >
-              <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
-                <Plus size={16} /> Alocar
-              </button>
-            </div>
+              {/* Renderiza as Linhas baseadas nas salas reais */}
+              {salas.map((sala) => (
+                <div key={sala.id} className="contents">
+                  {/* Nome da Sala Fixa à Esquerda */}
+                  <div className="sticky left-0 bg-white z-10 flex items-center pr-4 border-r border-outline-variant/30 py-2">
+                    <span className="text-sm font-medium text-on-surface truncate">{sala.nome}</span>
+                  </div>
 
-            {/* 11:00 - LIVRE (GATILHO AQUI) */}
-            <div 
-              onClick={() => openAgendamento({ salaId: '102', hora: 11 })}
-              className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
-            >
-              <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
-                <Plus size={16} /> Alocar
-              </button>
-            </div>
-            
-            {/* 13:00 às 15:00 - Bloco contínuo ocupado */}
-            <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors col-span-2">
-              <span className="text-sm text-on-surface">Dra. Ana</span>
-              <button className="absolute -top-1 -right-1 w-6 h-6 bg-isd-orange text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" title="Registrar Falta">
-                <AlertCircle size={14} />
-              </button>
-            </div>
+                  {/* Células de Horário na Horizontal */}
+                  {horariosOperacionais.map(hora => {
+                    // Puxa o array de salas daquele horário exato e encontra a sala atual
+                    const arrayDoHorario = matriz[hora] || [];
+                    const dadosSlot = arrayDoHorario.find(s => s.sala_id === sala.id);
 
-            {/* 15:00 - LIVRE (GATILHO AQUI) */}
-            <div 
-              onClick={() => openAgendamento({ salaId: '102', hora: 15 })}
-              className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
-            >
-              <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
-                <Plus size={16} /> Alocar
-              </button>
-            </div>
+                    // Renderiza Livre (Clicável para abrir modal com os dados injetados)
+                    if (!dadosSlot || dadosSlot.status === 'LIVRE') {
+                      return (
+                        <div
+                          key={`${sala.id}-${hora}`}
+                          onClick={() => openAgendamento({ salaId: sala.id, hora: hora })}
+                          className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
+                        >
+                          <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
+                            <Plus size={16} /> Alocar
+                          </button>
+                        </div>
+                      );
+                    }
 
-            {/* 16:00 - Ocupado */}
-            <div className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-slate-300 transition-colors">
-              <span className="text-sm text-on-surface">Dr. Silva</span>
+                    // Renderiza Ocupado (Fixo ou Avulso)
+                    return (
+                      <div
+                        key={`${sala.id}-${hora}`}
+                        className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative min-h-[48px] border border-transparent"
+                      >
+                        <span className="text-xs font-semibold text-on-surface text-center leading-tight">
+                          {dadosSlot.profissional || "Alocado"}
+                        </span>
+
+                        {/* Tag exclusiva para quando o algoritmo de exceção bate */}
+                        {dadosSlot.status === 'OCUPADO_AVULSO' && (
+                          <span className="absolute bottom-0.5 right-1 text-[9px] text-isd-orange font-bold uppercase tracking-wider">
+                            Avulso
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

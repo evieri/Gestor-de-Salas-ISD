@@ -32,7 +32,7 @@ class Profissional(Base):
 class Sala(Base):
     __tablename__ = 'salas'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    setor_id = Column(UUID(as_uuid=True), ForeignKey('setores.id'), nullable=False)
+    setor_id = Column(UUID(as_uuid=True), ForeignKey('setores.id'), nullable=True)
     nome = Column(String, nullable=False)
     capacidade_profissionais = Column(Integer, nullable=False)
     especialidade_exclusiva_id = Column(UUID(as_uuid=True), ForeignKey('especialidades.id'), nullable=True)

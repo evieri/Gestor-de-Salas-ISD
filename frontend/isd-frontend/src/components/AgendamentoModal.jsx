@@ -86,8 +86,13 @@ export function AgendamentoModal() {
       closeAgendamento();
       // Idealmente, aqui disparamos um refresh na Grade
     } catch (error) {
-      // Captura o erro 400 (Overbooking) do FastAPI
-      setErroSalvar(error.response?.data?.detail || "Erro ao salvar a reserva.");
+      // Captura o erro 400 (Overbooking) ou 422 do FastAPI
+      const detail = error.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setErroSalvar("Dados inválidos. O profissional ou sala selecionados não existem no banco de dados.");
+      } else {
+        setErroSalvar(detail || "Erro ao salvar a reserva.");
+      }
     } finally {
       setSalvando(false); // Alterado de setCarregando para setSalvando
     }
