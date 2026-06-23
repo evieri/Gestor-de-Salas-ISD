@@ -94,3 +94,28 @@ class ProfissionalResponse(ProfissionalBase):
 
     class Config:
         from_attributes = True
+
+# ==========================================
+# 5. SCHEMAS DE AGENDAMENTO (Motor de Reservas)
+# ==========================================
+class AgendamentoBase(BaseModel):
+    sala_id: UUID
+    profissional_id: UUID
+    data: date
+    hora_inicio: int = Field(..., ge=8, le=16)
+    hora_fim: int = Field(..., ge=9, le=17)
+
+    @model_validator(mode='after')
+    def validar_regras_de_horario(self) -> 'AgendamentoBase':
+        if self.hora_inicio >= self.hora_fim:
+            raise ValueError('A hora final deve ser estritamente maior que a hora inicial.')
+        return self
+
+class AgendamentoCreate(AgendamentoBase):
+    pass
+
+class AgendamentoResponse(AgendamentoBase):
+    id: UUID
+
+    class Config:
+        from_attributes = True

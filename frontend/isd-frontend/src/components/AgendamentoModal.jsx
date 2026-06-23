@@ -10,6 +10,7 @@ export function AgendamentoModal() {
   const [profissionalSelecionado, setProfissionalSelecionado] = useState("");
   const [horaInicio, setHoraInicio] = useState(8);
   const [horaFim, setHoraFim] = useState(9);
+  const [dataAgendamento, setDataAgendamento] = useState(new Date().toISOString().split('T')[0]);
 
   // Estados para buscar do Back-end devidamente separados
   const [listas, setListas] = useState({ salas: [], profissionais: [] });
@@ -28,11 +29,11 @@ export function AgendamentoModal() {
       
       Promise.all([
         api.get('/salas').catch(() => ({ data: [] })), 
-        // api.get('/profissionais').catch(() => ({ data: [] })) // Descomente quando a rota existir
-      ]).then(([resSalas]) => {
+        api.get('/profissionais').catch(() => ({ data: [] }))
+      ]).then(([resSalas, resProfissionais]) => {
         setListas({ 
           salas: resSalas.data, 
-          profissionais: [] // resProfissionais.data
+          profissionais: resProfissionais.data
         });
       }).finally(() => {
         setCarregandoDados(false);
@@ -76,10 +77,10 @@ export function AgendamentoModal() {
     setSalvando(true); // Alterado de setCarregando para setSalvando
 
     try {
-      await api.post('/grade-fixa', {
+      await api.post('/agendamentos', {
         sala_id: salaSelecionada,
         profissional_id: profissionalSelecionado,
-        dia_semana: new Date().getDay() || 1, // Temporário, envia o dia de hoje
+        data: dataAgendamento,
         hora_inicio: horaInicio,
         hora_fim: horaFim
       });
@@ -130,18 +131,21 @@ export function AgendamentoModal() {
               className="w-full bg-white border border-slate-300 hover:border-isd-teal/50 hover:bg-slate-50 cursor-pointer transition-all rounded-md px-3 py-2 text-sm focus:outline-none focus:border-isd-teal focus:ring-1 focus:ring-isd-teal disabled:opacity-50"
             >
               <option value="">Selecione uma sala livre...</option>
-              {/* Fallback temporário para testes na UI antes da API responder */}
-              {listas.salas.length === 0 && (
-                <>
-                  <option value="102">Consultório 102</option>
-                  <option value="ginasio">Ginásio Terapêutico</option>
-                </>
-              )}
-              {/* Mapeamento dos dados reais do Banco */}
               {listas.salas.map(sala => (
                 <option key={sala.id} value={sala.id}>{sala.nome}</option>
               ))}
             </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-slate-600">Data da Reserva</label>
+            <input 
+              type="date"
+              value={dataAgendamento}
+              onChange={(e) => setDataAgendamento(e.target.value)}
+              disabled={carregandoDados}
+              className="w-full bg-white border border-slate-300 hover:border-isd-teal/50 hover:bg-slate-50 cursor-pointer transition-all rounded-md px-3 py-2 text-sm focus:outline-none focus:border-isd-teal focus:ring-1 focus:ring-isd-teal disabled:opacity-50"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -153,14 +157,8 @@ export function AgendamentoModal() {
               className="w-full bg-white border border-slate-300 hover:border-isd-teal/50 hover:bg-slate-50 cursor-pointer transition-all rounded-md px-3 py-2 text-sm focus:outline-none focus:border-isd-teal focus:ring-1 focus:ring-isd-teal disabled:opacity-50"
             >
               <option value="">Selecione o profissional...</option>
-              {listas.profissionais.length === 0 && (
-                 <>
-                   <option value="1">Dr. Silva (Oftalmologia)</option>
-                   <option value="2">Dra. Ana (Fisioterapia)</option>
-                 </>
-              )}
               {listas.profissionais.map(prof => (
-                <option key={prof.id} value={prof.id}>{prof.nome_completo}</option>
+                <option key={prof.id} value={prof.id}>{prof.nome_completo} - {prof.especialidade}</option>
               ))}
             </select>
           </div>

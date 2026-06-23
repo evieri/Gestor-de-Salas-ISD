@@ -63,3 +63,12 @@ class ReservaAvulsa(Base):
     data_reserva = Column(Date, nullable=False)
     hora_inicio = Column(Integer, nullable=False)
     hora_fim = Column(Integer, nullable=False)
+
+class Agendamento(Base):
+    __tablename__ = 'agendamentos'
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sala_id = Column(UUID(as_uuid=True), ForeignKey('salas.id'), nullable=False)
+    profissional_id = Column(UUID(as_uuid=True), ForeignKey('profissionais.id'), nullable=False)
+    data = Column(Date, nullable=False)
+    hora_inicio = Column(Integer, nullable=False)
+    hora_fim = Column(Integer, nullable=False)
