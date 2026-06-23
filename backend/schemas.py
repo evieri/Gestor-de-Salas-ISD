@@ -82,7 +82,8 @@ class ExcecaoDiariaResponse(ExcecaoDiariaBase):
 # ==========================================
 class ProfissionalBase(BaseModel):
     nome_completo: str = Field(..., min_length=3)
-    especialidade_id: Optional[UUID] = None
+    especialidade: str = Field(..., min_length=3)
+    registro_conselho: str = Field(..., min_length=3)
 
 class ProfissionalCreate(ProfissionalBase):
     pass

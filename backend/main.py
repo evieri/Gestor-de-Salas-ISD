@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import salas, grade, dashboard
+from backend.routers import salas, grade, dashboard, profissionais
 # from backend.routers import dashboard # Descomente no Passo 4.4
 
 app = FastAPI(
@@ -21,3 +21,4 @@ app.add_middleware(
 app.include_router(salas.router)
 app.include_router(grade.router)
 app.include_router(dashboard.router)
+app.include_router(profissionais.router)

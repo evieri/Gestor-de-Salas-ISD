@@ -25,8 +25,8 @@ class Profissional(Base):
     __tablename__ = 'profissionais'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome_completo = Column(String, nullable=False)
-    registro_conselho = Column(String, nullable=True)
-    especialidade_id = Column(UUID(as_uuid=True), ForeignKey('especialidades.id'), nullable=False)
+    especialidade = Column(String, nullable=False)
+    registro_conselho = Column(String, unique=True, nullable=False)
     ativo = Column(Boolean, default=True)
 
 class Sala(Base):
