@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "/home/emmanuel/Documentos/Gestor-de-Salas-ISD/venv/bin/python",
+  "python.analysis.extraPaths": [
+    "/home/emmanuel/Documentos/Gestor-de-Salas-ISD/venv/lib/python3.12/site-packages"
+  ]
+}
