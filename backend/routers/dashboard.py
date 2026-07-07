@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import date
 from typing import Dict, Any
 from datetime import datetime
@@ -18,8 +19,15 @@ def obter_dashboard_diario(data_alvo: date, db: Session = Depends(get_db)) -> Di
     if dia_semana_bd > 5:
         return {"mensagem": "Finais de semana não possuem expediente operacional."}
 
-    # 2. Buscar infraestrutura e ocupação base
-    salas = db.query(models.Sala).filter(models.Sala.ativo == True).all()
+    # 2. Buscar infraestrutura e ocupação base (Inclui salas inativas que tiveram uso no dia)
+    salas_com_agendamento_subq = db.query(models.Agendamento.sala_id).filter(models.Agendamento.data == data_alvo).subquery()
+    
+    salas = db.query(models.Sala).filter(
+        or_(
+            models.Sala.ativo == True,
+            models.Sala.id.in_(salas_com_agendamento_subq)
+        )
+    ).all()
     grade_do_dia = db.query(models.GradeFixa).filter(models.GradeFixa.dia_semana == dia_semana_bd).all()
     excecoes_hoje = db.query(models.ExcecaoDiaria).filter(models.ExcecaoDiaria.data_excecao == data_alvo).all()
     reservas_hoje = db.query(models.ReservaAvulsa).filter(models.ReservaAvulsa.data_reserva == data_alvo).all()

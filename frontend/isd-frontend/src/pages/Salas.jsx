@@ -30,6 +30,22 @@ export default function Salas() {
     buscarSalas();
   }, []);
 
+  const handleExcluirSala = async (id) => {
+    if (window.confirm("Tem certeza que deseja inativar esta sala?")) {
+      try {
+        await api.delete(`/salas/${id}`);
+        buscarSalas();
+      } catch (error) {
+        console.error("Erro ao inativar sala:", error);
+        if (error.response && error.response.status === 400) {
+          alert(error.response.data.detail || "Não é possível inativar a sala no momento.");
+        } else {
+          alert("Erro interno ao inativar a sala.");
+        }
+      }
+    }
+  };
+
   const handleCriarSala = async (e) => {
     e.preventDefault();
     if (!numero.trim()) return;
@@ -37,12 +53,14 @@ export default function Salas() {
     setSalvando(true);
     setErroModal(null);
     const nomeComposto = `${tipo} ${numero}`;
+    
+    const payload = {
+      nome: nomeComposto,
+      capacidade_profissionais: parseInt(capacidade) || 1
+    };
 
     try {
-      await api.post('/salas', {
-        nome: nomeComposto,
-        capacidade_profissionais: parseInt(capacidade) || 1
-      });
+      await api.post('/salas', payload);
 
       setNumero('');
       setTipo('Consultório');
@@ -76,7 +94,12 @@ export default function Salas() {
         </div>
         <div>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setNumero('');
+              setTipo('Consultório');
+              setCapacidade(1);
+              setIsModalOpen(true);
+            }}
             className="bg-isd-teal hover:bg-opacity-90 text-white font-semibold text-sm px-5 py-2.5 rounded shadow-sm transition-all flex items-center gap-2 w-full md:w-auto justify-center cursor-pointer"
           >
             <Plus size={16} />
@@ -126,10 +149,7 @@ export default function Salas() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-2 text-slate-400">
-                        <button className="p-1 hover:text-isd-teal transition-colors rounded cursor-pointer" title="Editar">
-                          <Edit size={18} />
-                        </button>
-                        <button className="p-1 hover:text-isd-orange transition-colors rounded cursor-pointer" title="Inativar">
+                        <button onClick={() => handleExcluirSala(sala.id)} className="p-1 hover:text-isd-orange transition-colors rounded cursor-pointer" title="Inativar">
                           <Ban size={18} />
                         </button>
                       </div>

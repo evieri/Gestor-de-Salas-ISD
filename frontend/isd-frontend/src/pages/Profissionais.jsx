@@ -13,6 +13,7 @@ export default function Profissionais() {
   const [registroConselho, setRegistroConselho] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erroModal, setErroModal] = useState(null);
+  const [itemEmEdicao, setItemEmEdicao] = useState(null);
 
   const buscarProfissionais = async () => {
     try {
@@ -30,23 +31,51 @@ export default function Profissionais() {
     buscarProfissionais();
   }, []);
 
-  const handleCriarProfissional = async (e) => {
+  const handleEditarProfissional = (prof) => {
+    setNomeCompleto(prof.nome_completo);
+    setEspecialidade(prof.especialidade);
+    setRegistroConselho(prof.registro_conselho);
+    setItemEmEdicao(prof.id);
+    setErroModal(null);
+    setIsModalOpen(true);
+  };
+
+  const handleExcluirProfissional = async (id) => {
+    if (window.confirm("Tem certeza que deseja inativar este profissional?")) {
+      try {
+        await api.delete(`/profissionais/${id}`);
+        buscarProfissionais();
+      } catch (error) {
+        console.error("Erro ao inativar profissional:", error);
+        alert("Erro ao inativar profissional.");
+      }
+    }
+  };
+
+  const handleSalvarProfissional = async (e) => {
     e.preventDefault();
     if (!nomeCompleto.trim() || !especialidade.trim() || !registroConselho.trim()) return;
 
     setSalvando(true);
     setErroModal(null);
 
+    const payload = {
+      nome_completo: nomeCompleto,
+      especialidade: especialidade,
+      registro_conselho: registroConselho
+    };
+
     try {
-      await api.post('/profissionais', {
-        nome_completo: nomeCompleto,
-        especialidade: especialidade,
-        registro_conselho: registroConselho
-      });
+      if (itemEmEdicao) {
+        await api.put(`/profissionais/${itemEmEdicao}`, payload);
+      } else {
+        await api.post('/profissionais', payload);
+      }
 
       setNomeCompleto('');
       setEspecialidade('');
       setRegistroConselho('');
+      setItemEmEdicao(null);
       setIsModalOpen(false);
       buscarProfissionais();
     } catch (error) {
@@ -77,7 +106,13 @@ export default function Profissionais() {
         </div>
         <div>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setItemEmEdicao(null);
+              setNomeCompleto('');
+              setEspecialidade('');
+              setRegistroConselho('');
+              setIsModalOpen(true);
+            }}
             className="bg-isd-teal hover:bg-opacity-90 text-white font-semibold text-sm px-5 py-2.5 rounded shadow-sm transition-all flex items-center gap-2 w-full md:w-auto justify-center cursor-pointer"
           >
             <Plus size={16} />
@@ -127,10 +162,10 @@ export default function Profissionais() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-2 text-slate-400">
-                        <button className="p-1 hover:text-isd-teal transition-colors rounded cursor-pointer" title="Editar">
+                        <button onClick={() => handleEditarProfissional(prof)} className="p-1 hover:text-isd-teal transition-colors rounded cursor-pointer" title="Editar">
                           <Edit size={18} />
                         </button>
-                        <button className="p-1 hover:text-isd-orange transition-colors rounded cursor-pointer" title="Inativar">
+                        <button onClick={() => handleExcluirProfissional(prof.id)} className="p-1 hover:text-isd-orange transition-colors rounded cursor-pointer" title="Inativar">
                           <Ban size={18} />
                         </button>
                       </div>
@@ -163,13 +198,15 @@ export default function Profissionais() {
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative bg-white w-full max-w-md rounded-xl shadow-xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-on-surface font-sans">Cadastrar Novo Profissional</h2>
+              <h2 className="text-lg font-bold text-on-surface font-sans">
+                {itemEmEdicao ? 'Editar Profissional' : 'Cadastrar Novo Profissional'}
+              </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1 rounded-full hover:bg-slate-100">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCriarProfissional}>
+            <form onSubmit={handleSalvarProfissional}>
               <div className="p-6 flex flex-col gap-4">
                 {erroModal && (
                   <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md font-medium font-sans">
@@ -228,7 +265,7 @@ export default function Profissionais() {
                   className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-isd-teal text-white hover:bg-opacity-90 rounded-md shadow-sm transition-colors cursor-pointer font-sans disabled:opacity-70"
                 >
                   {salvando && <Loader2 size={16} className="animate-spin" />}
-                  {salvando ? "CRIANDO..." : "SALVAR PROFISSIONAL"}
+                  {salvando ? "SALVANDO..." : (itemEmEdicao ? "ATUALIZAR PROFISSIONAL" : "SALVAR PROFISSIONAL")}
                 </button>
               </div>
             </form>

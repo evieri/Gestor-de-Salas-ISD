@@ -15,6 +15,12 @@ class SalaBase(BaseModel):
 class SalaCreate(SalaBase):
     pass
 
+class SalaUpdate(BaseModel):
+    nome: Optional[str] = Field(None, min_length=3, description="Ex: Consultório 102")
+    capacidade_profissionais: Optional[int] = Field(None, gt=0, description="1 para individual, >1 para ginásio")
+    setor_id: Optional[UUID] = None
+    especialidade_exclusiva_id: Optional[UUID] = None
+
 class SalaResponse(SalaBase):
     id: UUID
     ativo: bool
@@ -87,6 +93,11 @@ class ProfissionalBase(BaseModel):
 
 class ProfissionalCreate(ProfissionalBase):
     pass
+
+class ProfissionalUpdate(BaseModel):
+    nome_completo: Optional[str] = Field(None, min_length=3)
+    especialidade: Optional[str] = Field(None, min_length=3)
+    registro_conselho: Optional[str] = Field(None, min_length=3)
 
 class ProfissionalResponse(ProfissionalBase):
     id: UUID
