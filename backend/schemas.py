@@ -123,7 +123,7 @@ class AgendamentoBase(BaseModel):
         return self
 
 class AgendamentoCreate(AgendamentoBase):
-    pass
+    recorrente: bool = False
 
 class AgendamentoResponse(AgendamentoBase):
     id: UUID

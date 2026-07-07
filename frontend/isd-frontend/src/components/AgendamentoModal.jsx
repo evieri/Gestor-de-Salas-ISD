@@ -11,6 +11,7 @@ export function AgendamentoModal() {
   const [horaInicio, setHoraInicio] = useState(8);
   const [horaFim, setHoraFim] = useState(9);
   const [dataAgendamento, setDataAgendamento] = useState(new Date().toISOString().split('T')[0]);
+  const [recorrente, setRecorrente] = useState(false);
 
   // Estados para buscar do Back-end devidamente separados
   const [listas, setListas] = useState({ salas: [], profissionais: [] });
@@ -55,6 +56,7 @@ export function AgendamentoModal() {
       setProfissionalSelecionado("");
       setHoraInicio(8);
       setHoraFim(9);
+      setRecorrente(false);
     }
   }, [preFillData]);
 
@@ -82,7 +84,8 @@ export function AgendamentoModal() {
         profissional_id: profissionalSelecionado,
         data: dataAgendamento,
         hora_inicio: horaInicio,
-        hora_fim: horaFim
+        hora_fim: horaFim,
+        recorrente: recorrente
       });
       triggerRefresh();
       closeAgendamento();
@@ -192,6 +195,19 @@ export function AgendamentoModal() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-2 bg-slate-50 p-3 rounded border border-slate-200 cursor-pointer" onClick={() => setRecorrente(!recorrente)}>
+            <input 
+              type="checkbox" 
+              id="recorrente"
+              checked={recorrente}
+              readOnly
+              className="w-4 h-4 text-isd-teal border-slate-300 rounded focus:ring-isd-teal cursor-pointer"
+            />
+            <label className="text-sm font-semibold text-slate-700 cursor-pointer pointer-events-none">
+              Repetir semanalmente até o fim do ano
+            </label>
           </div>
         </div>
 

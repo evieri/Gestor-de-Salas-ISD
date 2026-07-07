@@ -19,11 +19,9 @@ export function DashboardGrid() {
 
       const response = await api.get(`/dashboard/diario?data_alvo=${hoje}`);
 
-      // O seu backend retorna: { data, dia_semana, grade: { "8": [...], "9": [...] } }
       if (response.data && response.data.grade) {
         setMatriz(response.data.grade);
 
-        // Pega a lista de salas do primeiro horário (8h) para montar o eixo Y vertical
         const primeiroHorario = horariosOperacionais[0];
         const salasDoPrimeiroHorario = response.data.grade[primeiroHorario] || [];
 
@@ -42,7 +40,7 @@ export function DashboardGrid() {
   };
 
   const handleExcluirAgendamento = async (e, agendamento_id) => {
-    e.stopPropagation(); // Evita abrir o modal de criação ao clicar na lixeira
+    e.stopPropagation(); 
     if (!agendamento_id) return;
     
     if (window.confirm("Tem certeza que deseja cancelar esse agendamento?")) {
@@ -64,6 +62,44 @@ export function DashboardGrid() {
     buscarGradeReal();
   }, [refreshTrigger]);
 
+  // Merge Contíguo: Processamento inteligente de blocos vizinhos
+  const processarBlocosDaSala = (salaId) => {
+    const blocos = [];
+    let blocoAtual = null;
+
+    horariosOperacionais.forEach((hora, index) => {
+      const arrayDoHorario = matriz[hora] || [];
+      const dadosSlot = arrayDoHorario.find(s => s.sala_id === salaId);
+
+      const saoIdenticos = (slot1, slot2) => {
+        if (!slot1 || !slot2) return false;
+        if (slot1.status !== slot2.status) return false;
+        if (slot1.status === 'LIVRE') return false; 
+        
+        const profs1 = slot1.profissionais?.map(p => p.agendamento_id).sort().join(',') || '';
+        const profs2 = slot2.profissionais?.map(p => p.agendamento_id).sort().join(',') || '';
+        return profs1 === profs2 && profs1 !== '';
+      };
+
+      if (blocoAtual && saoIdenticos(blocoAtual.dadosSlot, dadosSlot)) {
+        blocoAtual.colSpan += 1;
+      } else {
+        if (blocoAtual) blocos.push(blocoAtual);
+        blocoAtual = {
+          hora,
+          colSpan: 1,
+          dadosSlot
+        };
+      }
+      
+      if (index === horariosOperacionais.length - 1 && blocoAtual) {
+        blocos.push(blocoAtual);
+      }
+    });
+    
+    return blocos;
+  };
+
   return (
     <div className="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col mt-6">
       <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-slate-50/50">
@@ -78,114 +114,115 @@ export function DashboardGrid() {
         </div>
       </div>
 
-      <div className="overflow-x-auto flex-1">
-        <div className="min-w-[1000px] h-full p-4">
+      <div className="flex-1 overflow-hidden relative">
+        <div className="h-full w-full overflow-auto custom-scroll">
+          <div className="min-w-[1000px]">
 
           {salas.length === 0 && !carregando ? (
             <div className="flex items-center justify-center h-32 text-slate-500 font-medium">
               Nenhuma sala ativa encontrada no banco para montar o painel.
             </div>
           ) : (
-            <div className="grid grid-cols-[200px_repeat(8,_1fr)] gap-2 h-full">
-              {/* Linha do Cabeçalho de Horários */}
-              <div className="sticky left-0 bg-white z-10 border-b border-outline-variant/50 pb-2"></div>
+            <div className="grid grid-cols-[200px_repeat(8,_minmax(0,_1fr))] gap-2 p-4">
+              {/* Cabeçalho */}
+              <div className="sticky top-0 left-0 bg-white z-30 border-b border-r border-outline-variant/50 pb-2 pt-2"></div>
               {horariosOperacionais.map(hora => (
-                <div key={hora} className="text-center text-sm font-semibold text-on-surface-variant border-b border-outline-variant/50 pb-2">
+                <div key={hora} className="sticky top-0 bg-white z-20 text-center text-sm font-semibold text-on-surface-variant border-b border-outline-variant/50 pb-2 pt-2">
                   {hora < 10 ? `0${hora}:00` : `${hora}:00`}
                 </div>
               ))}
 
-              {/* Renderiza as Linhas baseadas nas salas reais */}
-              {salas.map((sala) => (
-                <div key={sala.id} className="contents">
-                  {/* Nome da Sala Fixa à Esquerda */}
-                  <div className="sticky left-0 bg-white z-10 flex items-center pr-4 border-r border-outline-variant/30 py-2">
-                    <span className="text-sm font-medium text-on-surface truncate">{sala.nome}</span>
-                  </div>
+              {/* Salas */}
+              {salas.map((sala) => {
+                const blocos = processarBlocosDaSala(sala.id);
+                return (
+                  <div key={sala.id} className="contents">
+                    <div className="sticky left-0 bg-white z-10 flex items-center pr-4 border-r border-outline-variant/30 py-1.5">
+                      <span className="text-sm font-medium text-on-surface truncate">{sala.nome}</span>
+                    </div>
 
-                  {/* Células de Horário na Horizontal */}
-                  {horariosOperacionais.map(hora => {
-                    // Puxa o array de salas daquele horário exato e encontra a sala atual
-                    const arrayDoHorario = matriz[hora] || [];
-                    const dadosSlot = arrayDoHorario.find(s => s.sala_id === sala.id);
+                    {blocos.map((bloco, idx) => {
+                      const dadosSlot = bloco.dadosSlot;
+                      
+                      // Livre
+                      if (!dadosSlot || dadosSlot.status === 'LIVRE') {
+                        return (
+                          <div
+                            key={`${sala.id}-${bloco.hora}-${idx}`}
+                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora })}
+                            style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
+                            className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[36px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
+                          >
+                            <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
+                              <Plus size={16} /> Alocar
+                            </button>
+                          </div>
+                        );
+                      }
 
-                    // Renderiza Livre (Clicável para abrir modal com os dados injetados)
-                    if (!dadosSlot || dadosSlot.status === 'LIVRE') {
+                      // Parcial
+                      if (dadosSlot.status === 'PARCIAL') {
+                        return (
+                          <div
+                            key={`${sala.id}-${bloco.hora}-${idx}`}
+                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora })}
+                            style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
+                            className="bg-amber-100 border border-amber-300 rounded-md px-2 py-1.5 flex flex-col relative min-h-[36px] cursor-pointer hover:bg-amber-200 transition-colors"
+                            title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
+                          >
+                            <div className="w-full flex flex-col gap-1">
+                              {dadosSlot.profissionais?.map((profObj, i) => (
+                                <div key={i} className="group flex justify-between items-center w-full rounded-sm hover:bg-amber-300/30 transition-colors">
+                                  <span className="text-[11px] font-semibold text-amber-900 text-left truncate">{profObj.nome}</span>
+                                  {profObj.agendamento_id && (
+                                    <button 
+                                      onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
+                                      className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
+                                      title="Cancelar Reserva"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Lotado
                       return (
                         <div
-                          key={`${sala.id}-${hora}`}
-                          onClick={() => openAgendamento({ salaId: sala.id, hora: hora })}
-                          className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[48px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
-                        >
-                          <button className="opacity-0 group-hover:opacity-100 text-xs font-semibold text-isd-teal flex items-center gap-1 transition-opacity">
-                            <Plus size={16} /> Alocar
-                          </button>
-                        </div>
-                      );
-                    }
-
-                    // Renderiza Parcial
-                    if (dadosSlot.status === 'PARCIAL') {
-                      return (
-                        <div
-                          key={`${sala.id}-${hora}`}
-                          onClick={() => openAgendamento({ salaId: sala.id, hora: hora })}
-                          className="bg-amber-100 border border-amber-300 rounded-md p-1.5 flex flex-col relative min-h-[48px] cursor-pointer hover:bg-amber-200 transition-colors"
+                          key={`${sala.id}-${bloco.hora}-${idx}`}
+                          style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
+                          className="bg-slate-200 rounded-md px-2 py-1.5 flex flex-col relative min-h-[36px] border border-transparent"
                           title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                         >
-                          <div className="w-full flex flex-col gap-1.5 mb-4 mt-0.5">
-                            {dadosSlot.profissionais?.map((profObj, idx) => (
-                              <div key={idx} className="group flex justify-between items-center w-full px-1 py-0.5 rounded-sm hover:bg-amber-300/30 transition-colors">
-                                <span className="text-[11px] font-semibold text-amber-900 text-left truncate">{profObj.nome}</span>
-                                {profObj.agendamento_id && (
-                                  <button 
-                                    onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
-                                    className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
-                                    title="Cancelar Reserva"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
-                                )}
+                          <div className="w-full flex flex-col gap-1">
+                            {dadosSlot.profissionais?.map((profObj, i) => (
+                              <div key={i} className="group flex justify-between items-center w-full rounded-sm hover:bg-slate-300/40 transition-colors">
+                                  <span className="text-[11px] font-semibold text-slate-700 text-left truncate">{profObj.nome}</span>
+                                  {profObj.agendamento_id && (
+                                    <button 
+                                      onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
+                                      className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
+                                      title="Cancelar Reserva"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
                               </div>
                             ))}
                           </div>
-                          <span className="absolute bottom-1 right-1.5 text-[9px] text-amber-700 font-bold tracking-wider">
-                            {dadosSlot.ocupacao_atual}/{dadosSlot.capacidade_maxima}
-                          </span>
                         </div>
                       );
-                    }
-
-                    // Renderiza Lotado
-                    return (
-                      <div
-                        key={`${sala.id}-${hora}`}
-                        className="bg-slate-200 rounded-md p-1.5 flex flex-col relative min-h-[48px] border border-transparent"
-                        title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
-                      >
-                        <div className="w-full flex flex-col gap-1.5 mt-0.5">
-                          {dadosSlot.profissionais?.map((profObj, idx) => (
-                            <div key={idx} className="group flex justify-between items-center w-full px-1 py-0.5 rounded-sm hover:bg-slate-300/40 transition-colors">
-                                <span className="text-[11px] font-semibold text-slate-700 text-left truncate">{profObj.nome}</span>
-                                {profObj.agendamento_id && (
-                                  <button 
-                                    onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
-                                    className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
-                                    title="Cancelar Reserva"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
-                                )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
+                    })}
+                  </div>
+                );
+              })}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DashboardGrid } from '../components/DashboardGrid';
-import { PieChart, DoorOpen, Calendar, Download, Loader2 } from 'lucide-react';
+import { PieChart, DoorOpen, Calendar } from 'lucide-react';
 import { api } from '../services/api';
 import { useModalStore } from '../store/useModalStore';
 
@@ -12,38 +12,6 @@ export default function Dashboard() {
     total_salas: 0,
     agendamentos_hoje: 0
   });
-  const [isExporting, setIsExporting] = useState(false);
-
-  const handleExportarSemana = () => {
-    setIsExporting(true);
-    const dataSelecionada = new Date().toISOString().split('T')[0]; 
-    
-    api.get('/dashboard/exportar', { 
-      params: { data_alvo: dataSelecionada }, 
-      responseType: 'blob' 
-    })
-    .then((response) => {
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      
-      // O nome do arquivo real virá no header ou setamos o default aqui
-      link.setAttribute('download', 'grade_semanal.xlsx');
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup de memória
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    })
-    .catch((error) => {
-      console.error("Erro ao exportar:", error);
-      alert("Erro ao gerar a planilha. Tente novamente.");
-    })
-    .finally(() => {
-      setIsExporting(false);
-    });
-  };
 
   useEffect(() => {
     const hoje = new Date().toISOString().split('T')[0];
@@ -56,21 +24,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 w-full">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-on-surface font-sans">Visão Geral</h1>
-          <p className="text-on-surface-variant text-sm mt-1 font-sans">Métricas e acompanhamento do uso de salas</p>
-        </div>
-        <button
-          onClick={handleExportarSemana}
-          disabled={isExporting}
-          className="flex items-center gap-2 bg-isd-teal text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow hover:bg-opacity-90 transition-all disabled:opacity-70 cursor-pointer"
-        >
-          {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-          {isExporting ? "Gerando Excel..." : "Exportar Semana"}
-        </button>
-      </div>
-
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow">

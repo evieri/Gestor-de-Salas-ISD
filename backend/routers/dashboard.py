@@ -31,7 +31,7 @@ def obter_dashboard_diario(data_alvo: date, db: Session = Depends(get_db)) -> Di
             models.Sala.ativo == True,
             models.Sala.id.in_(salas_com_agendamento_subq)
         )
-    ).all()
+    ).order_by(models.Sala.nome).all()
     grade_do_dia = db.query(models.GradeFixa).filter(models.GradeFixa.dia_semana == dia_semana_bd).all()
     excecoes_hoje = db.query(models.ExcecaoDiaria).filter(models.ExcecaoDiaria.data_excecao == data_alvo).all()
     reservas_hoje = db.query(models.ReservaAvulsa).filter(models.ReservaAvulsa.data_reserva == data_alvo).all()
