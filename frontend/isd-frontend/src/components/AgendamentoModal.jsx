@@ -69,6 +69,12 @@ export function AgendamentoModal() {
     }
   }, [horaInicio]);
 
+  const getDiaSemana = (dataString) => {
+    const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const d = new Date(dataString + 'T12:00:00Z');
+    return dias[d.getDay()];
+  };
+
   // Função de Envio pro Backend (MUST-03)
   const handleSubmit = async () => {
     if (!salaSelecionada || !profissionalSelecionado) {
@@ -198,18 +204,23 @@ export function AgendamentoModal() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mt-2 bg-slate-50 p-3 rounded border border-slate-200 cursor-pointer" onClick={() => setRecorrente(!recorrente)}>
-            <input 
-              type="checkbox" 
-              id="recorrente"
-              checked={recorrente}
-              readOnly
-              className="w-4 h-4 text-isd-teal border-slate-300 rounded focus:ring-isd-teal cursor-pointer"
-            />
-            <label className="text-sm font-semibold text-slate-700 cursor-pointer pointer-events-none">
-              Repetir semanalmente até o fim do ano
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 select-none">
+              <input 
+                type="checkbox" 
+                checked={recorrente} 
+                onChange={(e) => setRecorrente(e.target.checked)} 
+                className="w-4 h-4 rounded border-slate-300 text-isd-teal focus:ring-isd-teal cursor-pointer"
+              />
+              Repetir toda {getDiaSemana(dataAgendamento)} até o fim do ano
             </label>
+            {recorrente && (
+              <p className="text-xs text-slate-500 mt-1 ml-6">
+                Este agendamento será multiplicado por todas as semanas futuras no mesmo horário e sala.
+              </p>
+            )}
           </div>
+
         </div>
 
         <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50 rounded-b-xl">

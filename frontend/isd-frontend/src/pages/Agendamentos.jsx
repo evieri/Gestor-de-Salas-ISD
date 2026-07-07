@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Loader2 } from 'lucide-react';
+import { Trash2, Loader2, Search } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function Agendamentos() {
   const [agendamentos, setAgendamentos] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [carregando, setCarregando] = useState(true);
 
   const buscarAgendamentos = async () => {
@@ -45,12 +46,32 @@ export default function Agendamentos() {
 
   const hojeStr = new Date().toISOString().split('T')[0];
 
+  const agendamentosFiltrados = agendamentos.filter((item) => {
+    const search = searchTerm.toLowerCase();
+    const matchProfissional = item.profissional.nome_completo.toLowerCase().includes(search);
+    const matchSala = item.sala.nome.toLowerCase().includes(search);
+    return matchProfissional || matchSala;
+  });
+
   return (
     <div className="p-8 max-w-7xl mx-auto h-full flex flex-col animate-in fade-in duration-300">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-on-surface font-sans">Gestão de Reservas</h1>
           <p className="text-on-surface-variant mt-1 text-sm font-sans">Histórico e cancelamento de agendamentos</p>
+        </div>
+        
+        <div className="relative w-80 shadow-sm">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={18} className="text-slate-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar por profissional ou sala..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-isd-teal/50 transition-shadow bg-white"
+          />
         </div>
       </div>
 
@@ -74,14 +95,14 @@ export default function Agendamentos() {
                     <p className="text-sm">Carregando agendamentos...</p>
                   </td>
                 </tr>
-              ) : agendamentos.length === 0 ? (
+              ) : agendamentosFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="py-8 text-center text-slate-500 text-sm">
-                    Nenhuma reserva encontrada no banco.
+                    {searchTerm ? "Nenhuma reserva encontrada para essa busca." : "Nenhuma reserva encontrada no banco."}
                   </td>
                 </tr>
               ) : (
-                agendamentos.map((item) => {
+                agendamentosFiltrados.map((item) => {
                   const isPassado = item.data < hojeStr;
                   // Cria data com T00:00:00 para evitar que o fuso horário volte um dia
                   const dataObj = new Date(item.data + "T00:00:00");

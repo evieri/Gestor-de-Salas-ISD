@@ -102,8 +102,8 @@ def criar_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depe
 
 @router.get("/", response_model=List[schemas.AgendamentoListResponse])
 def listar_agendamentos(db: Session = Depends(get_db)):
-    # Retorna do mais recente para o mais antigo, e ordenado por horário
-    return db.query(models.Agendamento).order_by(desc(models.Agendamento.data), desc(models.Agendamento.hora_inicio)).all()
+    # Retorna do mais próximo de hoje para os mais distantes no futuro (crescente)
+    return db.query(models.Agendamento).order_by(models.Agendamento.data.asc(), models.Agendamento.hora_inicio.asc()).all()
 
 @router.delete("/{agendamento_id}", status_code=204)
 def excluir_agendamento(agendamento_id: UUID, db: Session = Depends(get_db)):

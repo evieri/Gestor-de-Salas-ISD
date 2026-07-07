@@ -183,6 +183,16 @@ export function DashboardGrid() {
                                   )}
                                 </div>
                               ))}
+                              
+                              {/* Botão de adicionar mais profissionais (Espaço livre no Ginásio) */}
+                              {dadosSlot.ocupacao_atual < dadosSlot.capacidade_maxima && (
+                                <div 
+                                  className="flex justify-center items-center w-full rounded-sm hover:bg-amber-300/50 transition-colors py-0.5 cursor-pointer mt-0.5 border border-dashed border-amber-400/50 text-amber-600/70 hover:text-amber-700"
+                                  title="Alocar mais um profissional"
+                                >
+                                  <Plus size={14} strokeWidth={3} />
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
