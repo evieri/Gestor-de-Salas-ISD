@@ -57,20 +57,36 @@ def obter_dashboard_diario(data_alvo: date, db: Session = Depends(get_db)) -> Di
                     for ex in excecoes_hoje
                 )
                 if not teve_falta:
-                    status_sala["profissionais"].append(alocacao.profissional.nome_completo)
+                    status_sala["profissionais"].append({
+                        "agendamento_id": None,
+                        "nome": alocacao.profissional.nome_completo
+                    })
             
             # Acumula profissionais de Reservas Avulsas
             reservas = [r for r in reservas_hoje if r.sala_id == sala.id and r.hora_inicio <= hora < r.hora_fim]
             for r in reservas:
-                status_sala["profissionais"].append(r.profissional.nome_completo)
+                status_sala["profissionais"].append({
+                    "agendamento_id": None,
+                    "nome": r.profissional.nome_completo
+                })
             
             # Acumula profissionais do Motor de Reservas (Agendamento)
             agendamentos = [a for a in agendamentos_hoje if a.sala_id == sala.id and a.hora_inicio <= hora < a.hora_fim]
             for a in agendamentos:
-                status_sala["profissionais"].append(a.profissional.nome_completo)
+                status_sala["profissionais"].append({
+                    "agendamento_id": str(a.id),
+                    "nome": a.profissional.nome_completo
+                })
             
-            # Remove duplicatas caso ocorram falhas de sincronia
-            status_sala["profissionais"] = list(set(status_sala["profissionais"]))
+            # Remove duplicatas baseadas no nome (para dicionários)
+            vistos = set()
+            profissionais_unicos = []
+            for p in status_sala["profissionais"]:
+                if p["nome"] not in vistos:
+                    vistos.add(p["nome"])
+                    profissionais_unicos.append(p)
+            status_sala["profissionais"] = profissionais_unicos
+            
             status_sala["ocupacao_atual"] = len(status_sala["profissionais"])
             
             # Determina o Status Visual

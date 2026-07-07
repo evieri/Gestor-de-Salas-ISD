@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Trash2 } from 'lucide-react';
 import { useModalStore } from '../store/useModalStore';
 import { api } from '../services/api';
 
@@ -38,6 +38,25 @@ export function DashboardGrid() {
       console.error("Erro ao ler matriz do dashboard:", error);
     } finally {
       setCarregando(false);
+    }
+  };
+
+  const handleExcluirAgendamento = async (e, agendamento_id) => {
+    e.stopPropagation(); // Evita abrir o modal de criação ao clicar na lixeira
+    if (!agendamento_id) return;
+    
+    if (window.confirm("Tem certeza que deseja cancelar esse agendamento?")) {
+      try {
+        await api.delete(`/agendamentos/${agendamento_id}`);
+        buscarGradeReal();
+      } catch (error) {
+        console.error("Erro ao cancelar agendamento:", error);
+        if (error.response && error.response.data && error.response.data.detail) {
+          alert(error.response.data.detail);
+        } else {
+          alert("Erro interno ao cancelar a reserva.");
+        }
+      }
     }
   };
 
@@ -112,11 +131,22 @@ export function DashboardGrid() {
                           key={`${sala.id}-${hora}`}
                           onClick={() => openAgendamento({ salaId: sala.id, hora: hora })}
                           className="bg-amber-100 border border-amber-300 rounded-md p-1 flex flex-col items-center justify-center relative min-h-[48px] cursor-pointer hover:bg-amber-200 transition-colors gap-0.5"
-                          title={dadosSlot.profissionais?.join(", ")}
+                          title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                         >
                           <div className="text-xs font-semibold text-amber-900 text-center leading-tight w-full flex flex-col mb-3">
-                            {dadosSlot.profissionais?.map((prof, idx) => (
-                              <span key={idx} className="block w-full truncate">{prof}</span>
+                            {dadosSlot.profissionais?.map((profObj, idx) => (
+                              <div key={idx} className="group flex justify-between items-center gap-2 w-full px-1">
+                                <span className="block w-full truncate">{profObj.nome}</span>
+                                {profObj.agendamento_id && (
+                                  <button 
+                                    onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
+                                    className="hidden group-hover:block text-red-600 hover:bg-red-200 rounded-full p-1 cursor-pointer transition-all shrink-0"
+                                    title="Cancelar Reserva"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
                             ))}
                           </div>
                           <span className="absolute bottom-0 right-1 text-[9px] text-amber-700 font-bold tracking-wider">
@@ -131,11 +161,22 @@ export function DashboardGrid() {
                       <div
                         key={`${sala.id}-${hora}`}
                         className="bg-slate-200 rounded-md p-1 flex flex-col items-center justify-center relative min-h-[48px] border border-transparent gap-0.5"
-                        title={dadosSlot.profissionais?.join(", ")}
+                        title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                       >
                         <div className="text-xs font-semibold text-on-surface text-center leading-tight w-full flex flex-col">
-                          {dadosSlot.profissionais?.map((prof, idx) => (
-                            <span key={idx} className="block w-full truncate">{prof}</span>
+                          {dadosSlot.profissionais?.map((profObj, idx) => (
+                            <div key={idx} className="group flex justify-between items-center gap-2 w-full px-1">
+                                <span className="block w-full truncate">{profObj.nome}</span>
+                                {profObj.agendamento_id && (
+                                  <button 
+                                    onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
+                                    className="hidden group-hover:block text-red-600 hover:bg-red-200 rounded-full p-1 cursor-pointer transition-all shrink-0"
+                                    title="Cancelar Reserva"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                            </div>
                           ))}
                         </div>
                       </div>
