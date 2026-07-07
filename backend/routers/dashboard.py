@@ -44,36 +44,40 @@ def obter_dashboard_diario(data_alvo: date, db: Session = Depends(get_db)) -> Di
                 "sala_id": sala.id,
                 "sala_nome": sala.nome,
                 "status": "LIVRE",
-                "profissional": None
+                "profissionais": [],
+                "ocupacao_atual": 0,
+                "capacidade_maxima": sala.capacidade_profissionais
             }
 
-            # Verifica se há grade fixa para esta sala nesta hora
-            alocacao_fixa = next((g for g in grade_do_dia if g.sala_id == sala.id and g.hora_inicio <= hora < g.hora_fim), None)
-            
-            if alocacao_fixa:
-                # Se tem grade fixa, verifica se o profissional FULTOU (Exceção) nesta exata hora
+            # Acumula profissionais alocados na Grade Fixa
+            alocacoes_fixas = [g for g in grade_do_dia if g.sala_id == sala.id and g.hora_inicio <= hora < g.hora_fim]
+            for alocacao in alocacoes_fixas:
                 teve_falta = any(
-                    ex.grade_fixa_id == alocacao_fixa.id and ex.hora_inicio_ausencia <= hora < ex.hora_fim_ausencia
+                    ex.grade_fixa_id == alocacao.id and ex.hora_inicio_ausencia <= hora < ex.hora_fim_ausencia
                     for ex in excecoes_hoje
                 )
-                
                 if not teve_falta:
-                    status_sala["status"] = "OCUPADO"
-                    status_sala["profissional"] = alocacao_fixa.profissional.nome_completo # Exige lazy='joined' ou relacionamento no model
+                    status_sala["profissionais"].append(alocacao.profissional.nome_completo)
             
-            # Se a sala continuou livre (ou porque não tinha grade, ou porque teve falta), checa reservas avulsas
-            if status_sala["status"] == "LIVRE":
-                reserva_avulsa = next((r for r in reservas_hoje if r.sala_id == sala.id and r.hora_inicio <= hora < r.hora_fim), None)
-                if reserva_avulsa:
-                    status_sala["status"] = "OCUPADO_AVULSO"
-                    status_sala["profissional"] = reserva_avulsa.profissional.nome_completo
+            # Acumula profissionais de Reservas Avulsas
+            reservas = [r for r in reservas_hoje if r.sala_id == sala.id and r.hora_inicio <= hora < r.hora_fim]
+            for r in reservas:
+                status_sala["profissionais"].append(r.profissional.nome_completo)
             
-            # Se ainda estiver livre, checa o novo Motor de Reservas (Agendamento)
-            if status_sala["status"] == "LIVRE":
-                agendamento = next((a for a in agendamentos_hoje if a.sala_id == sala.id and a.hora_inicio <= hora < a.hora_fim), None)
-                if agendamento:
-                    status_sala["status"] = "OCUPADO"
-                    status_sala["profissional"] = agendamento.profissional.nome_completo
+            # Acumula profissionais do Motor de Reservas (Agendamento)
+            agendamentos = [a for a in agendamentos_hoje if a.sala_id == sala.id and a.hora_inicio <= hora < a.hora_fim]
+            for a in agendamentos:
+                status_sala["profissionais"].append(a.profissional.nome_completo)
+            
+            # Remove duplicatas caso ocorram falhas de sincronia
+            status_sala["profissionais"] = list(set(status_sala["profissionais"]))
+            status_sala["ocupacao_atual"] = len(status_sala["profissionais"])
+            
+            # Determina o Status Visual
+            if status_sala["ocupacao_atual"] >= status_sala["capacidade_maxima"]:
+                status_sala["status"] = "LOTADO"
+            elif status_sala["ocupacao_atual"] > 0:
+                status_sala["status"] = "PARCIAL"
             
             matriz_dashboard[hora].append(status_sala)
 

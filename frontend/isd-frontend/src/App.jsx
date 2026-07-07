@@ -3,6 +3,7 @@ import { BaseLayout } from './layouts/BaseLayout';
 import Dashboard from './pages/Dashboard';
 import Salas from './pages/Salas';
 import Profissionais from './pages/Profissionais';
+import Agendamentos from './pages/Agendamentos';
 
 export default function App() {
   return (
@@ -19,8 +20,8 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="salas" element={<Salas />} />
           
-          {/* Placeholder para futuras telas do sitemap */}
-          <Route path="agendamentos" element={<div className="p-8">Tela de Agendamentos em construção...</div>} />
+          {/* Rotas das Telas */}
+          <Route path="agendamentos" element={<Agendamentos />} />
           <Route path="profissionais" element={<Profissionais />} />
           <Route path="configuracoes" element={<div className="p-8">Configurações...</div>} />
         </Route>

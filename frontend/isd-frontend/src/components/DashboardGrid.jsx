@@ -53,7 +53,8 @@ export function DashboardGrid() {
           {carregando && <Loader2 size={16} className="animate-spin text-isd-teal" />}
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-slate-200"></div><span className="text-sm text-on-surface-variant">Ocupado</span></div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-slate-200"></div><span className="text-sm text-on-surface-variant">Lotado</span></div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-300"></div><span className="text-sm text-on-surface-variant">Parcial</span></div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm border border-dashed border-outline-variant"></div><span className="text-sm text-on-surface-variant">Livre</span></div>
         </div>
       </div>
@@ -104,22 +105,39 @@ export function DashboardGrid() {
                       );
                     }
 
-                    // Renderiza Ocupado (Fixo ou Avulso)
+                    // Renderiza Parcial
+                    if (dadosSlot.status === 'PARCIAL') {
+                      return (
+                        <div
+                          key={`${sala.id}-${hora}`}
+                          onClick={() => openAgendamento({ salaId: sala.id, hora: hora })}
+                          className="bg-amber-100 border border-amber-300 rounded-md p-1 flex flex-col items-center justify-center relative min-h-[48px] cursor-pointer hover:bg-amber-200 transition-colors gap-0.5"
+                          title={dadosSlot.profissionais?.join(", ")}
+                        >
+                          <div className="text-xs font-semibold text-amber-900 text-center leading-tight w-full flex flex-col mb-3">
+                            {dadosSlot.profissionais?.map((prof, idx) => (
+                              <span key={idx} className="block w-full truncate">{prof}</span>
+                            ))}
+                          </div>
+                          <span className="absolute bottom-0 right-1 text-[9px] text-amber-700 font-bold tracking-wider">
+                            {dadosSlot.ocupacao_atual}/{dadosSlot.capacidade_maxima}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    // Renderiza Lotado
                     return (
                       <div
                         key={`${sala.id}-${hora}`}
-                        className="bg-slate-200 rounded-md p-2 flex items-center justify-center relative min-h-[48px] border border-transparent"
+                        className="bg-slate-200 rounded-md p-1 flex flex-col items-center justify-center relative min-h-[48px] border border-transparent gap-0.5"
+                        title={dadosSlot.profissionais?.join(", ")}
                       >
-                        <span className="text-xs font-semibold text-on-surface text-center leading-tight">
-                          {dadosSlot.profissional || "Alocado"}
-                        </span>
-
-                        {/* Tag exclusiva para quando o algoritmo de exceção bate */}
-                        {dadosSlot.status === 'OCUPADO_AVULSO' && (
-                          <span className="absolute bottom-0.5 right-1 text-[9px] text-isd-orange font-bold uppercase tracking-wider">
-                            Avulso
-                          </span>
-                        )}
+                        <div className="text-xs font-semibold text-on-surface text-center leading-tight w-full flex flex-col">
+                          {dadosSlot.profissionais?.map((prof, idx) => (
+                            <span key={idx} className="block w-full truncate">{prof}</span>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}

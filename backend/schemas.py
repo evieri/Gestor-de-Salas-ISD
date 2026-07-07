@@ -130,3 +130,11 @@ class AgendamentoResponse(AgendamentoBase):
 
     class Config:
         from_attributes = True
+
+class AgendamentoListResponse(AgendamentoBase):
+    id: UUID
+    sala: SalaResponse
+    profissional: ProfissionalResponse
+
+    class Config:
+        from_attributes = True
