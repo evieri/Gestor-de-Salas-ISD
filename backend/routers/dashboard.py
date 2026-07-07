@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from datetime import date
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
+from fastapi.responses import StreamingResponse
+import io
+import openpyxl
+from openpyxl.styles import Font, Alignment
 
 from backend.dependencies import get_db
 import backend.models as models
@@ -136,3 +140,99 @@ def obter_metricas(data_alvo: date, db: Session = Depends(get_db)):
         "ocupacao_percentual": ocupacao,
         "agendamentos_hoje": len(agendamentos)
     }
+
+@router.get("/exportar")
+def exportar_planilha_semanal(data_alvo: date, db: Session = Depends(get_db)):
+    # 1. Encontrar a Segunda-feira dessa semana
+    # weekday(): Segunda = 0, Domingo = 6
+    segunda_feira = data_alvo - timedelta(days=data_alvo.weekday())
+    
+    # 2. Criar a planilha
+    wb = openpyxl.Workbook()
+    if "Sheet" in wb.sheetnames:
+        wb.remove(wb["Sheet"])
+        
+    # Buscar Salas Ativas (Fora do loop para performance)
+    salas_ativas = db.query(models.Sala).filter(models.Sala.ativo == True).order_by(models.Sala.nome).all()
+    
+    # Mapear os dias de segunda (0) a sexta (4)
+    nomes_dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"]
+    
+    for i in range(5):
+        dia_atual = segunda_feira + timedelta(days=i)
+        titulo_aba = f"{nomes_dias[i]} ({dia_atual.strftime('%d-%m')})"
+        
+        ws = wb.create_sheet(title=titulo_aba)
+        
+        # Cabeçalhos fixos 
+        cabecalhos = ["Sala", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
+        ws.append(cabecalhos)
+        
+        for col in range(1, len(cabecalhos) + 1):
+            celula = ws.cell(row=1, column=col)
+            celula.font = Font(bold=True)
+            celula.alignment = Alignment(horizontal="center")
+            
+        # Buscar Alocações do Dia
+        agendamentos_dia = db.query(models.Agendamento).filter(models.Agendamento.data == dia_atual).all()
+        reservas_avulsas_dia = db.query(models.ReservaAvulsa).filter(models.ReservaAvulsa.data_reserva == dia_atual).all()
+        grade_fixa_dia = db.query(models.GradeFixa).filter(models.GradeFixa.dia_semana == i + 1).all()
+        excecoes_dia = db.query(models.ExcecaoDiaria).filter(models.ExcecaoDiaria.data_excecao == dia_atual).all()
+        
+        for sala in salas_ativas:
+            linha = [sala.nome]
+            
+            for hora in range(8, 18): # 8 as 17
+                if hora == 12:
+                    linha.append("-")
+                    continue
+                if hora == 17:
+                    # 17h marca apenas o final do expediente do slot das 16h
+                    linha.append("-")
+                    continue
+                    
+                profissionais_slot = []
+                
+                # Grade Fixa
+                alocacoes = [g for g in grade_fixa_dia if g.sala_id == sala.id and g.hora_inicio <= hora < g.hora_fim]
+                for alocacao in alocacoes:
+                    teve_falta = any(
+                        ex.grade_fixa_id == alocacao.id and ex.hora_inicio_ausencia <= hora < ex.hora_fim_ausencia
+                        for ex in excecoes_dia
+                    )
+                    if not teve_falta:
+                        profissionais_slot.append(alocacao.profissional.nome_completo)
+                
+                # Reservas Avulsas
+                reservas = [r for r in reservas_avulsas_dia if r.sala_id == sala.id and r.hora_inicio <= hora < r.hora_fim]
+                for r in reservas:
+                    profissionais_slot.append(r.profissional.nome_completo)
+                
+                # Agendamentos (Motor de Reservas)
+                agends = [a for a in agendamentos_dia if a.sala_id == sala.id and a.hora_inicio <= hora < a.hora_fim]
+                for a in agends:
+                    profissionais_slot.append(a.profissional.nome_completo)
+                    
+                profissionais_slot = list(set(profissionais_slot))
+                
+                if profissionais_slot:
+                    linha.append(", ".join(profissionais_slot))
+                else:
+                    linha.append("")
+                    
+            ws.append(linha)
+            
+    # Preparar buffer em memória
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    headers = {
+        'Content-Disposition': f'attachment; filename="grade_semanal_{segunda_feira.strftime("%d_%m_%Y")}.xlsx"'
+    }
+    
+    return StreamingResponse(
+        iter([buffer.getvalue()]), 
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        headers=headers
+    )

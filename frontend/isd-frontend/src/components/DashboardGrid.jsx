@@ -130,26 +130,26 @@ export function DashboardGrid() {
                         <div
                           key={`${sala.id}-${hora}`}
                           onClick={() => openAgendamento({ salaId: sala.id, hora: hora })}
-                          className="bg-amber-100 border border-amber-300 rounded-md p-1 flex flex-col items-center justify-center relative min-h-[48px] cursor-pointer hover:bg-amber-200 transition-colors gap-0.5"
+                          className="bg-amber-100 border border-amber-300 rounded-md p-1.5 flex flex-col relative min-h-[48px] cursor-pointer hover:bg-amber-200 transition-colors"
                           title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                         >
-                          <div className="text-xs font-semibold text-amber-900 text-center leading-tight w-full flex flex-col mb-3">
+                          <div className="w-full flex flex-col gap-1.5 mb-4 mt-0.5">
                             {dadosSlot.profissionais?.map((profObj, idx) => (
-                              <div key={idx} className="group flex justify-between items-center gap-2 w-full px-1">
-                                <span className="block w-full truncate">{profObj.nome}</span>
+                              <div key={idx} className="group flex justify-between items-center w-full px-1 py-0.5 rounded-sm hover:bg-amber-300/30 transition-colors">
+                                <span className="text-[11px] font-semibold text-amber-900 text-left truncate">{profObj.nome}</span>
                                 {profObj.agendamento_id && (
                                   <button 
                                     onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
-                                    className="hidden group-hover:block text-red-600 hover:bg-red-200 rounded-full p-1 cursor-pointer transition-all shrink-0"
+                                    className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
                                     title="Cancelar Reserva"
                                   >
-                                    <Trash2 size={12} />
+                                    <Trash2 size={13} />
                                   </button>
                                 )}
                               </div>
                             ))}
                           </div>
-                          <span className="absolute bottom-0 right-1 text-[9px] text-amber-700 font-bold tracking-wider">
+                          <span className="absolute bottom-1 right-1.5 text-[9px] text-amber-700 font-bold tracking-wider">
                             {dadosSlot.ocupacao_atual}/{dadosSlot.capacidade_maxima}
                           </span>
                         </div>
@@ -160,20 +160,20 @@ export function DashboardGrid() {
                     return (
                       <div
                         key={`${sala.id}-${hora}`}
-                        className="bg-slate-200 rounded-md p-1 flex flex-col items-center justify-center relative min-h-[48px] border border-transparent gap-0.5"
+                        className="bg-slate-200 rounded-md p-1.5 flex flex-col relative min-h-[48px] border border-transparent"
                         title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                       >
-                        <div className="text-xs font-semibold text-on-surface text-center leading-tight w-full flex flex-col">
+                        <div className="w-full flex flex-col gap-1.5 mt-0.5">
                           {dadosSlot.profissionais?.map((profObj, idx) => (
-                            <div key={idx} className="group flex justify-between items-center gap-2 w-full px-1">
-                                <span className="block w-full truncate">{profObj.nome}</span>
+                            <div key={idx} className="group flex justify-between items-center w-full px-1 py-0.5 rounded-sm hover:bg-slate-300/40 transition-colors">
+                                <span className="text-[11px] font-semibold text-slate-700 text-left truncate">{profObj.nome}</span>
                                 {profObj.agendamento_id && (
                                   <button 
                                     onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
-                                    className="hidden group-hover:block text-red-600 hover:bg-red-200 rounded-full p-1 cursor-pointer transition-all shrink-0"
+                                    className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
                                     title="Cancelar Reserva"
                                   >
-                                    <Trash2 size={12} />
+                                    <Trash2 size={13} />
                                   </button>
                                 )}
                             </div>
