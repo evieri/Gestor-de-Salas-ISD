@@ -4,13 +4,13 @@ import { useModalStore } from '../store/useModalStore';
 import { api } from '../services/api';
 
 export function AgendamentoModal() {
-  const { isAgendamentoOpen, closeAgendamento, preFillData, triggerRefresh } = useModalStore();
+  const { isAgendamentoOpen, closeAgendamento, preFillData, triggerRefresh, dataGlobal } = useModalStore();
   
   const [salaSelecionada, setSalaSelecionada] = useState("");
   const [profissionalSelecionado, setProfissionalSelecionado] = useState("");
   const [horaInicio, setHoraInicio] = useState(8);
   const [horaFim, setHoraFim] = useState(9);
-  const [dataAgendamento, setDataAgendamento] = useState(new Date().toISOString().split('T')[0]);
+  const [dataAgendamento, setDataAgendamento] = useState(dataGlobal);
   const [recorrente, setRecorrente] = useState(false);
 
   // Estados para buscar do Back-end devidamente separados
@@ -57,8 +57,9 @@ export function AgendamentoModal() {
       setHoraInicio(8);
       setHoraFim(9);
       setRecorrente(false);
+      setDataAgendamento(dataGlobal);
     }
-  }, [preFillData]);
+  }, [preFillData, dataGlobal]);
 
   // Efeito 2: Trava de Horários
   useEffect(() => {

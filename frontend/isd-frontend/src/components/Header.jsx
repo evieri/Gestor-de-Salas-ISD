@@ -4,15 +4,14 @@ import { useState } from 'react';
 import { api } from '../services/api';
 
 export function Header() {
-  const { openAgendamento } = useModalStore();
+  const { openAgendamento, dataGlobal } = useModalStore();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportarSemana = () => {
     setIsExporting(true);
-    const dataSelecionada = new Date().toISOString().split('T')[0]; 
     
     api.get('/dashboard/exportar', { 
-      params: { data_alvo: dataSelecionada }, 
+      params: { data_alvo: dataGlobal }, 
       responseType: 'blob' 
     })
     .then((response) => {

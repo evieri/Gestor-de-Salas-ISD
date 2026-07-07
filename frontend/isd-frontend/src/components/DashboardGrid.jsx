@@ -4,7 +4,7 @@ import { useModalStore } from '../store/useModalStore';
 import { api } from '../services/api';
 
 export function DashboardGrid() {
-  const { openAgendamento, refreshTrigger } = useModalStore();
+  const { openAgendamento, refreshTrigger, dataGlobal } = useModalStore();
   const [matriz, setMatriz] = useState({});
   const [salas, setSalas] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -15,9 +15,7 @@ export function DashboardGrid() {
   const buscarGradeReal = async () => {
     try {
       setCarregando(true);
-      const hoje = new Date().toISOString().split('T')[0];
-
-      const response = await api.get(`/dashboard/diario?data_alvo=${hoje}`);
+      const response = await api.get(`/dashboard/diario?data_alvo=${dataGlobal}`);
 
       if (response.data && response.data.grade) {
         setMatriz(response.data.grade);
@@ -60,7 +58,7 @@ export function DashboardGrid() {
 
   useEffect(() => {
     buscarGradeReal();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, dataGlobal]);
 
   // Merge Contíguo: Processamento inteligente de blocos vizinhos
   const processarBlocosDaSala = (salaId) => {
@@ -104,7 +102,7 @@ export function DashboardGrid() {
     <div className="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col mt-6">
       <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-slate-50/50">
         <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold text-on-surface">Grade de Ocupação - Hoje</h3>
+          <h3 className="text-lg font-semibold text-on-surface">Grade de Ocupação</h3>
           {carregando && <Loader2 size={16} className="animate-spin text-isd-teal" />}
         </div>
         <div className="flex items-center gap-4">
@@ -123,7 +121,7 @@ export function DashboardGrid() {
               Nenhuma sala ativa encontrada no banco para montar o painel.
             </div>
           ) : (
-            <div className="grid grid-cols-[200px_repeat(8,_minmax(0,_1fr))] gap-2 p-4">
+            <div className="grid grid-cols-[130px_repeat(8,_minmax(0,_1fr))] gap-x-2 gap-y-3 p-4">
               {/* Cabeçalho */}
               <div className="sticky top-0 left-0 bg-white z-30 border-b border-r border-outline-variant/50 pb-2 pt-2"></div>
               {horariosOperacionais.map(hora => (
@@ -149,7 +147,7 @@ export function DashboardGrid() {
                         return (
                           <div
                             key={`${sala.id}-${bloco.hora}-${idx}`}
-                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora })}
+                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora, data: dataGlobal })}
                             style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
                             className="border border-dashed border-outline-variant/50 rounded-md flex items-center justify-center relative group min-h-[36px] cursor-pointer hover:bg-isd-teal/5 transition-colors"
                           >
@@ -165,19 +163,19 @@ export function DashboardGrid() {
                         return (
                           <div
                             key={`${sala.id}-${bloco.hora}-${idx}`}
-                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora })}
+                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora, data: dataGlobal })}
                             style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
                             className="bg-amber-100 border border-amber-300 rounded-md px-2 py-1.5 flex flex-col relative min-h-[36px] cursor-pointer hover:bg-amber-200 transition-colors"
                             title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                           >
                             <div className="w-full flex flex-col gap-1">
                               {dadosSlot.profissionais?.map((profObj, i) => (
-                                <div key={i} className="group flex justify-between items-center w-full rounded-sm hover:bg-amber-300/30 transition-colors">
-                                  <span className="text-[11px] font-semibold text-amber-900 text-left truncate">{profObj.nome}</span>
+                                <div key={i} className="group relative flex items-center w-full rounded-sm hover:bg-amber-300/30 transition-colors py-0.5">
+                                  <span className="text-[11px] font-semibold text-amber-900 text-left truncate w-full pr-1">{profObj.nome}</span>
                                   {profObj.agendamento_id && (
                                     <button 
                                       onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
-                                      className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
+                                      className="absolute right-0 bg-amber-100 group-hover:bg-red-100 opacity-0 group-hover:opacity-100 text-red-600 rounded p-1 cursor-pointer transition-all shadow-sm border border-red-200 z-10"
                                       title="Cancelar Reserva"
                                     >
                                       <Trash2 size={13} />
@@ -200,12 +198,12 @@ export function DashboardGrid() {
                         >
                           <div className="w-full flex flex-col gap-1">
                             {dadosSlot.profissionais?.map((profObj, i) => (
-                              <div key={i} className="group flex justify-between items-center w-full rounded-sm hover:bg-slate-300/40 transition-colors">
-                                  <span className="text-[11px] font-semibold text-slate-700 text-left truncate">{profObj.nome}</span>
+                              <div key={i} className="group relative flex items-center w-full rounded-sm hover:bg-slate-300/40 transition-colors py-0.5">
+                                  <span className="text-[11px] font-semibold text-slate-700 text-left truncate w-full pr-1">{profObj.nome}</span>
                                   {profObj.agendamento_id && (
                                     <button 
                                       onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
-                                      className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-200 rounded p-1 cursor-pointer transition-all shrink-0 ml-1"
+                                      className="absolute right-0 bg-slate-200 group-hover:bg-red-100 opacity-0 group-hover:opacity-100 text-red-600 rounded p-1 cursor-pointer transition-all shadow-sm border border-red-200 z-10"
                                       title="Cancelar Reserva"
                                     >
                                       <Trash2 size={13} />
@@ -217,6 +215,8 @@ export function DashboardGrid() {
                         </div>
                       );
                     })}
+                    {/* Divisória Horizontal no final de cada Sala (Trilho visual) */}
+                    <div className="col-span-9 border-b border-slate-100/70 mt-1 mb-1"></div>
                   </div>
                 );
               })}
