@@ -1,6 +1,5 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
-import { Header } from '../components/Header';
 import { AgendamentoModal } from '../components/AgendamentoModal';
 
 export function BaseLayout() {
