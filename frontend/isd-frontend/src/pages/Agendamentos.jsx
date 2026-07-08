@@ -44,7 +44,11 @@ export default function Agendamentos() {
     }
   };
 
-  const hojeStr = new Date().toISOString().split('T')[0];
+  const getLocalYYYYMMDD = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const hojeStr = getLocalYYYYMMDD();
 
   const agendamentosFiltrados = agendamentos.filter((item) => {
     const search = searchTerm.toLowerCase();
@@ -103,7 +107,9 @@ export default function Agendamentos() {
                 </tr>
               ) : (
                 agendamentosFiltrados.map((item) => {
-                  const isPassado = item.data < hojeStr;
+                  const agoraHora = new Date().getHours();
+                  const isPassado = item.data < hojeStr || (item.data === hojeStr && item.hora_inicio <= agoraHora);
+                  
                   // Cria data com T00:00:00 para evitar que o fuso horário volte um dia
                   const dataObj = new Date(item.data + "T00:00:00");
                   const dataFormatada = dataObj.toLocaleDateString('pt-BR');

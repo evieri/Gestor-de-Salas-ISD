@@ -16,8 +16,8 @@ export function Sidebar() {
           <Activity className="text-primary" size={24} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-on-primary">Gestor ISD</h1>
-          <p className="text-xs text-on-primary opacity-80">Regulação Física</p>
+          <h1 className="text-xl font-black tracking-tight text-isd-gold">ALOCA</h1>
+          <p className="text-[10px] uppercase font-bold text-on-primary opacity-60 tracking-widest mt-0.5">Gestor de Espaços</p>
         </div>
       </div>
 

@@ -8,7 +8,6 @@ export function BaseLayout() {
     <div className="bg-slate-50 min-h-screen flex font-sans overflow-x-hidden">
       <Sidebar />
       <main className="ml-[260px] w-[calc(100%-260px)] min-h-screen flex flex-col relative">
-        <Header />
         <div className="p-8 flex-1 flex flex-col max-w-[1440px] mx-auto w-full">
           <Outlet />
         </div>

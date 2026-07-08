@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { DashboardGrid } from '../components/DashboardGrid';
-import { PieChart, DoorOpen, Calendar, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { PieChart, DoorOpen, Calendar, ChevronLeft, ChevronRight, CalendarDays, Download, Plus, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useModalStore } from '../store/useModalStore';
 
 export default function Dashboard() {
-  const { refreshTrigger, dataGlobal, setDataGlobal } = useModalStore();
+  const { refreshTrigger, dataGlobal, setDataGlobal, openAgendamento } = useModalStore();
+  const [isExporting, setIsExporting] = useState(false);
   const [metricas, setMetricas] = useState({
     ocupacao_percentual: 0,
     salas_livres_agora: 0,
@@ -25,8 +26,40 @@ export default function Dashboard() {
     setDataGlobal(d.toISOString().split('T')[0]);
   };
 
+  const getLocalYYYYMMDD = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   const setHoje = () => {
-    setDataGlobal(new Date().toISOString().split('T')[0]);
+    setDataGlobal(getLocalYYYYMMDD());
+  };
+
+  const handleExportarSemana = () => {
+    setIsExporting(true);
+    
+    api.get('/dashboard/exportar', { 
+      params: { data_alvo: dataGlobal }, 
+      responseType: 'blob' 
+    })
+    .then((response) => {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'grade_semanal.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    })
+    .catch((error) => {
+      console.error("Erro ao exportar:", error);
+      alert("Erro ao gerar a planilha. Tente novamente.");
+    })
+    .finally(() => {
+      setIsExporting(false);
+    });
   };
 
   useEffect(() => {
@@ -39,8 +72,36 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 w-full">
+      {/* Cabeçalho de Ações Específico do Dashboard */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-on-surface font-sans tracking-tight">Dashboard de Ocupação</h1>
+          <p className="text-sm text-on-surface-variant font-sans mt-1">Visão global e logística do instituto</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <button 
+            title="Exportar Grade Semanal (.xlsx)"
+            onClick={handleExportarSemana}
+            disabled={isExporting}
+            className="text-on-surface-variant hover:text-isd-teal transition-colors flex items-center justify-center p-2 rounded-full hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
+          >
+            {isExporting ? <Loader2 size={22} className="animate-spin text-isd-teal" /> : <Download size={22} />}
+          </button>
+          
+          <div className="h-8 w-px bg-outline-variant mx-1"></div>
+          
+          <button 
+            onClick={() => openAgendamento()}
+            className="flex items-center gap-2 px-6 py-2.5 bg-isd-teal text-white rounded-md font-semibold text-sm hover:bg-opacity-90 transition-all shadow-sm cursor-pointer"
+          >
+            <Plus size={18} />
+            NOVO AGENDAMENTO
+          </button>
+        </div>
+      </div>
+
       {/* Metric Cards - Agora com 4 Colunas para abrigar a Data */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
         
         <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
@@ -116,7 +177,7 @@ export default function Dashboard() {
             <button 
               onClick={setHoje}
               className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
-                dataGlobal === new Date().toISOString().split('T')[0] 
+                dataGlobal === getLocalYYYYMMDD() 
                   ? 'bg-slate-100 text-slate-400 cursor-default pointer-events-none'
                   : 'bg-isd-teal/10 text-isd-teal hover:bg-isd-teal/20 cursor-pointer'
               }`}

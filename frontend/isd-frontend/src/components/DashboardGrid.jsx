@@ -142,8 +142,31 @@ export function DashboardGrid() {
                     {blocos.map((bloco, idx) => {
                       const dadosSlot = bloco.dadosSlot;
                       
+                      const getLocalYYYYMMDD = () => {
+                        const d = new Date();
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      };
+                      const hojeStr = getLocalYYYYMMDD();
+                      const agoraHora = new Date().getHours();
+                      const isPassado = dataGlobal < hojeStr || (dataGlobal === hojeStr && bloco.hora <= agoraHora);
+                      
                       // Livre
                       if (!dadosSlot || dadosSlot.status === 'LIVRE') {
+                        if (isPassado) {
+                          return (
+                            <div
+                              key={`${sala.id}-${bloco.hora}-${idx}`}
+                              style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
+                              className="border border-dashed border-slate-200/50 bg-slate-50/50 rounded-md flex items-center justify-center relative min-h-[36px] cursor-not-allowed"
+                              title="Horário passado"
+                            >
+                               <div className="text-slate-300">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                               </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div
                             key={`${sala.id}-${bloco.hora}-${idx}`}
@@ -163,16 +186,16 @@ export function DashboardGrid() {
                         return (
                           <div
                             key={`${sala.id}-${bloco.hora}-${idx}`}
-                            onClick={() => openAgendamento({ salaId: sala.id, hora: bloco.hora, data: dataGlobal })}
+                            onClick={() => !isPassado && openAgendamento({ salaId: sala.id, hora: bloco.hora, data: dataGlobal })}
                             style={{ gridColumn: `span ${bloco.colSpan} / span ${bloco.colSpan}` }}
-                            className="bg-amber-100 border border-amber-300 rounded-md px-2 py-1.5 flex flex-col relative min-h-[36px] cursor-pointer hover:bg-amber-200 transition-colors"
+                            className={`bg-amber-100 border border-amber-300 rounded-md px-2 py-1.5 flex flex-col relative min-h-[36px] transition-colors ${!isPassado ? 'cursor-pointer hover:bg-amber-200' : ''}`}
                             title={dadosSlot.profissionais?.map(p => p.nome).join(", ")}
                           >
                             <div className="w-full flex flex-col gap-1">
                               {dadosSlot.profissionais?.map((profObj, i) => (
                                 <div key={i} className="group relative flex items-center w-full rounded-sm hover:bg-amber-300/30 transition-colors py-0.5">
                                   <span className="text-[11px] font-semibold text-amber-900 text-left truncate w-full pr-1">{profObj.nome}</span>
-                                  {profObj.agendamento_id && (
+                                  {profObj.agendamento_id && !isPassado && (
                                     <button 
                                       onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
                                       className="absolute right-0 bg-amber-100 group-hover:bg-red-100 opacity-0 group-hover:opacity-100 text-red-600 rounded p-1 cursor-pointer transition-all shadow-sm border border-red-200 z-10"
@@ -185,12 +208,20 @@ export function DashboardGrid() {
                               ))}
                               
                               {/* Botão de adicionar mais profissionais (Espaço livre no Ginásio) */}
-                              {dadosSlot.ocupacao_atual < dadosSlot.capacidade_maxima && (
+                              {dadosSlot.ocupacao_atual < dadosSlot.capacidade_maxima && !isPassado && (
                                 <div 
                                   className="flex justify-center items-center w-full rounded-sm hover:bg-amber-300/50 transition-colors py-0.5 cursor-pointer mt-0.5 border border-dashed border-amber-400/50 text-amber-600/70 hover:text-amber-700"
                                   title="Alocar mais um profissional"
                                 >
                                   <Plus size={14} strokeWidth={3} />
+                                </div>
+                              )}
+                              {dadosSlot.ocupacao_atual < dadosSlot.capacidade_maxima && isPassado && (
+                                <div 
+                                  className="flex justify-center items-center w-full rounded-sm transition-colors py-0.5 mt-0.5 border border-dashed border-amber-400/30 text-amber-600/30 cursor-not-allowed"
+                                  title="Horário passado"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                                 </div>
                               )}
                             </div>
@@ -210,7 +241,7 @@ export function DashboardGrid() {
                             {dadosSlot.profissionais?.map((profObj, i) => (
                               <div key={i} className="group relative flex items-center w-full rounded-sm hover:bg-slate-300/40 transition-colors py-0.5">
                                   <span className="text-[11px] font-semibold text-slate-700 text-left truncate w-full pr-1">{profObj.nome}</span>
-                                  {profObj.agendamento_id && (
+                                  {profObj.agendamento_id && !isPassado && (
                                     <button 
                                       onClick={(e) => handleExcluirAgendamento(e, profObj.agendamento_id)}
                                       className="absolute right-0 bg-slate-200 group-hover:bg-red-100 opacity-0 group-hover:opacity-100 text-red-600 rounded p-1 cursor-pointer transition-all shadow-sm border border-red-200 z-10"

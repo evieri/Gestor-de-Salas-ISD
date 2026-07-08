@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, case
 from typing import List
-from typing import List
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from uuid import UUID
 
 from backend.dependencies import get_db
@@ -14,6 +13,14 @@ router = APIRouter(prefix="/agendamentos", tags=["Agendamentos"])
 
 @router.post("/", response_model=schemas.AgendamentoResponse)
 def criar_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depends(get_db)):
+    # 0. Auditoria Cronológica (Proibir Passado)
+    hoje = date.today()
+    agora_hora = datetime.now().hour
+    if agendamento.data < hoje:
+        raise HTTPException(status_code=400, detail="Não é possível criar agendamentos no passado.")
+    if agendamento.data == hoje and agendamento.hora_inicio <= agora_hora:
+        raise HTTPException(status_code=400, detail="Este horário já iniciou ou passou. Escolha um horário futuro.")
+
     sala = db.query(models.Sala).filter(models.Sala.id == agendamento.sala_id).first()
     if not sala:
         raise HTTPException(status_code=404, detail="Sala não encontrada")
@@ -102,18 +109,38 @@ def criar_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depe
 
 @router.get("/", response_model=List[schemas.AgendamentoListResponse])
 def listar_agendamentos(db: Session = Depends(get_db)):
-    # Retorna do mais próximo de hoje para os mais distantes no futuro (crescente)
-    return db.query(models.Agendamento).order_by(models.Agendamento.data.asc(), models.Agendamento.hora_inicio.asc()).all()
+    hoje = date.today()
+    
+    # 0 = Futuro/Hoje (Crescente)
+    # 1 = Passado (Decrescente)
+    return db.query(models.Agendamento).order_by(
+        case(
+            (models.Agendamento.data >= hoje, 0), 
+            else_=1
+        ),
+        case(
+            (models.Agendamento.data >= hoje, models.Agendamento.data)
+        ).asc(),
+        case(
+            (models.Agendamento.data < hoje, models.Agendamento.data)
+        ).desc(),
+        models.Agendamento.hora_inicio.asc()
+    ).all()
 
 @router.delete("/{agendamento_id}", status_code=204)
 def excluir_agendamento(agendamento_id: UUID, db: Session = Depends(get_db)):
     agendamento = db.query(models.Agendamento).filter(models.Agendamento.id == agendamento_id).first()
     if not agendamento:
         raise HTTPException(status_code=404, detail="Agendamento não encontrado.")
+
+    hoje = date.today()
+    agora_hora = datetime.now().hour
     
-    if agendamento.data < date.today():
+    if agendamento.data < hoje:
         raise HTTPException(status_code=400, detail="Não é possível cancelar agendamentos do passado (Auditoria).")
-    
+    if agendamento.data == hoje and agendamento.hora_inicio <= agora_hora:
+        raise HTTPException(status_code=400, detail="Não é possível cancelar agendamentos cujo horário já iniciou ou passou (Auditoria).")
+
     db.delete(agendamento)
     db.commit()
     return None
